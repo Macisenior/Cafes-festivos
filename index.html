@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gastos del Grupo</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+  <style>
+  :root {
+    --principal: #4CAF50;
+    --fondo: #f2f2f2;
+    --tarjeta: #ffffff;
+    --rojo: #e53935;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--fondo);
+    padding: 12px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .card {
+    background: var(--tarjeta);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  }
+
+  input, select {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0 10px 0;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 8px;
+    border-radius: 12px;
+    border: none;
+    background: var(--principal);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  .delete {
+    background: var(--rojo);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-left: 10px;
+  }
+
+  label {
+    display: block;
+    padding: 6px 0;
+    font-size: 15px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 8px;
+    text-align: center;
+  }
+
+  th {
+    background: #f0f0f0;
+  }
+
+  tr:nth-child(even) {
+    background: #fafafa;
+  }
+
+  #listaGastos div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #fafafa;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  @media (min-width: 600px) {
+    body {
+      max-width: 480px;
+      margin: auto;
+    }
+  }
+</style>
+
+</head>
+<body>
+
+<h1>💸 Gastos del Grupo</h1>
+
+<div class="card">
+  <h2>👤 Añadir persona</h2>
+  <input id="nombrePersona" placeholder="Nombre">
+  <input id="aportePersona" type="number" placeholder="Aportó €">
+  <button onclick="agregarPersona()">Añadir</button>
+</div>
+
+<div class="card">
+  <h2>➕ Añadir efectivo</h2>
+  <select id="personaEfectivo"></select>
+  <input id="efectivoExtra" type="number" placeholder="Cantidad €">
+  <button onclick="añadirEfectivo()">Añadir efectivo</button>
+</div>
+
+<div class="card">
+  <h2>💳 Añadir gasto</h2>
+  <select id="sitio">
+    <option>Flap</option>
+    <option>Colono</option>
+    <option>Lydo</option>
+  </select>
+  <input id="descripcionGasto" placeholder="Descripción">
+  <input id="montoGasto" type="number" placeholder="Importe €">
+  <strong>Participantes</strong>
+  <div id="checkboxPersonas"></div>
+  <button onclick="agregarGasto()">Añadir gasto</button>
+</div>
+
+<div class="card">
+  <h2>📊 Resumen Personas</h2>
+  <div id="resumenPersonas"></div>
+</div>
+
+<div class="card">
+  <h2>📍 Resumen por Sitio</h2>
+  <div id="resumenSitios"></div>
+</div>
+
+<div class="card">
+  <h2>🧾 Gastos</h2>
+  <div id="listaGastos"></div>
+</div>
+
+<script>
+  let personas = JSON.parse(localStorage.getItem("personas")) || []
+  let gastos = JSON.parse(localStorage.getItem("gastos")) || []
+
+  function guardar() {
+    localStorage.setItem("personas", JSON.stringify(personas))
+    localStorage.setItem("gastos", JSON.stringify(gastos))
+  }
+
+  function agregarPersona() {
+    if (!nombrePersona.value || !aportePersona.value) return
+    personas.push({
+      id: Date.now(),
+      nombre: nombrePersona.value,
+      aportado: Number(aportePersona.value)
+    })
+    nombrePersona.value = ""
+    aportePersona.value = ""
+    guardar()
+    render()
+  }
+
+  function añadirEfectivo() {
+    const persona = personas.find(p => p.id == personaEfectivo.value)
+    const cantidad = Number(efectivoExtra.value)
+    if (!persona || cantidad <= 0) return
+    persona.aportado += cantidad
+    efectivoExtra.value = ""
+    guardar()
+    render()
+  }
+
+  function agregarGasto() {
+    const participantes = [...checkboxPersonas.querySelectorAll("input:checked")]
+      .map(c => Number(c.value))
+    if (!descripcionGasto.value || !montoGasto.value || participantes.length === 0) return
+    gastos.push({
+      id: Date.now(),
+      sitio: sitio.value,
+      descripcion: descripcionGasto.value,
+      monto: Number(montoGasto.value),
+      participantes
+    })
+    descripcionGasto.value = ""
+    montoGasto.value = ""
+    guardar()
+    render()
+  }
+
+  function borrarGasto(id) {
+    gastos = gastos.filter(g => g.id !== id)
+    guardar()
+    render()
+  }
+
+  function render() {
+    checkboxPersonas.innerHTML = ""
+    personaEfectivo.innerHTML = ""
+
+    personas.forEach(p => {
+      checkboxPersonas.innerHTML += `
+        <label><input type="checkbox" value="${p.id}"> ${p.nombre}</label><br>`
+      personaEfectivo.innerHTML += `<option value="${p.id}">${p.nombre}</option>`
+    })
+
+    const gastoPersona = {}
+    personas.forEach(p => gastoPersona[p.id] = 0)
+
+    gastos.forEach(g => {
+      const parte = g.monto / g.participantes.length
+      g.participantes.forEach(id => gastoPersona[id] += parte)
+    })
+
+    let tabla = `<table><tr><th>Persona</th><th>Aportó</th><th>Gastó</th><th>Balance</th></tr>`
+    personas.forEach(p => {
+      const balance = p.aportado - gastoPersona[p.id]
+      tabla += `<tr><td>${p.nombre}</td><td>${p.aportado}€</td><td>${gastoPersona[p.id].toFixed(2)}€</td><td>${balance.toFixed(2)}€</td></tr>`
+    })
+    tabla += "</table>"
+    resumenPersonas.innerHTML = tabla
+
+    const sitios = { Flap: 0, Colono: 0, Lydo: 0 }
+    gastos.forEach(g => sitios[g.sitio] += g.monto)
+    resumenSitios.innerHTML = `Flap: ${sitios.Flap}€<br>Colono: ${sitios.Colono}€<br>Lydo: ${sitios.Lydo}€`
+
+    listaGastos.innerHTML = ""
+    gastos.forEach(g => {
+      listaGastos.innerHTML += `<div>${g.sitio} - ${g.descripcion} - ${g.monto}€
+        <button class="delete" onclick="borrarGasto(${g.id})">X</button></div>`
+    })
+  }
+
+  render()
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+  }
+</script>
+
+</body>
+</html>
