@@ -1,290 +1,227 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Gastos del Grupo</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4CAF50">
+<meta charset="UTF-8">
+<title>Gastos del Grupo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style>
-    :root {
-      --principal: #4CAF50;
-      --fondo: #f2f2f2;
-      --tarjeta: #ffffff;
-      --rojo: #e53935;
-    }
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4CAF50">
 
-    * { box-sizing: border-box; }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    body {
-      margin: 0;
-      font-family: system-ui, sans-serif;
-      background: var(--fondo);
-      padding: 12px;
-      font-size: 17px;
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 26px;
-      margin-bottom: 10px;
-    }
-
-    h2 { font-size: 20px; }
-
-    .card {
-      background: var(--tarjeta);
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 14px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-
-    input, select {
-      width: 100%;
-      padding: 14px;
-      margin: 6px 0;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      font-size: 18px;
-    }
-
-    button {
-      width: 100%;
-      padding: 16px;
-      border-radius: 12px;
-      border: none;
-      background: var(--principal);
-      color: white;
-      font-size: 18px;
-      font-weight: 600;
-      margin-top: 8px;
-    }
-
-    .delete {
-      background: var(--rojo);
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    th, td {
-      padding: 10px;
-      text-align: center;
-    }
-
-    th { background: #f0f0f0; }
-
-    #listaGastos div {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #fafafa;
-      padding: 10px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-    }
-
-    @media (min-width: 600px) {
-      body {
-        max-width: 480px;
-        margin: auto;
-      }
-    }
-  </style>
+<style>
+:root{--p:#4CAF50;--f:#f2f2f2;--t:#fff;--r:#e53935}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--f);padding:12px;font-size:17px}
+h1{text-align:center;font-size:26px}
+h2{font-size:20px}
+.card{background:var(--t);padding:15px;margin-bottom:15px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+input,select{width:100%;padding:14px;margin:6px 0;border-radius:10px;border:1px solid #ccc;font-size:18px}
+button{width:100%;padding:16px;border-radius:12px;border:none;background:var(--p);color:#fff;font-size:18px;font-weight:600;margin-top:8px}
+.delete{background:var(--r);padding:6px 10px;border-radius:8px;font-size:14px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px;text-align:center}
+th{background:#eee}
+#listaGastos div{display:flex;justify-content:space-between;align-items:center;background:#fafafa;padding:10px;border-radius:10px;margin-bottom:8px}
+@media(min-width:600px){body{max-width:480px;margin:auto}}
+</style>
 </head>
 
 <body>
 
 <h1>💸 Gastos del Grupo</h1>
 
-<div class="card" id="compartirCard">
-  <button onclick="compartirLectura()">👥 Compartir vista solo lectura</button>
+<div class="card" id="totalRestante" style="text-align:center;font-size:22px;font-weight:600;"></div>
+
+<div class="card" id="shareCard">
+  <button onclick="compartirConDatos()">👥 Compartir vista del grupo</button>
 </div>
 
-<div id="modoLectura" class="card" style="display:none; background:#fff3cd;">
-  👀 Estás viendo el modo solo lectura
-</div>
-
-<div class="card editable">
-  <h2>👤 Añadir persona</h2>
-  <input id="nombrePersona" placeholder="Nombre">
-  <input id="aportePersona" type="number" placeholder="Aportó €">
-  <button onclick="agregarPersona()">Añadir</button>
+<div id="modoLectura" class="card" style="display:none;background:#fff3cd">
+👀 Vista solo lectura
 </div>
 
 <div class="card editable">
-  <h2>➕ Añadir efectivo</h2>
-  <select id="personaEfectivo"></select>
-  <input id="efectivoExtra" type="number" placeholder="Cantidad €">
-  <button onclick="añadirEfectivo()">Añadir efectivo</button>
+<h2>👤 Añadir persona</h2>
+<input id="nombrePersona" placeholder="Nombre">
+<input id="aportePersona" type="number" placeholder="Aportó €">
+<button onclick="agregarPersona()">Añadir</button>
 </div>
 
 <div class="card editable">
-  <h2>💳 Añadir gasto</h2>
-  <select id="sitio">
-    <option>Flap</option>
-    <option>Colono</option>
-    <option>Lydo</option>
-  </select>
-  <input id="descripcionGasto" placeholder="Descripción">
-  <input id="montoGasto" type="number" placeholder="Importe €">
-  <strong>Participantes</strong>
-  <div id="checkboxPersonas"></div>
-  <button onclick="agregarGasto()">Añadir gasto</button>
+<h2>➕ Añadir efectivo</h2>
+<select id="personaEfectivo"></select>
+<input id="efectivoExtra" type="number" placeholder="Cantidad €">
+<button onclick="añadirEfectivo()">Añadir efectivo</button>
+</div>
+
+<div class="card editable">
+<h2>💳 Añadir gasto</h2>
+<select id="sitio">
+  <option>Flap</option>
+  <option>Colono</option>
+  <option>Lydo</option>
+</select>
+<input id="descripcionGasto" placeholder="Descripción">
+<input id="montoGasto" type="number" placeholder="Importe €">
+<strong>Participantes</strong>
+<div id="checkboxPersonas"></div>
+<button onclick="agregarGasto()">Añadir gasto</button>
 </div>
 
 <div class="card">
-  <h2>📊 Resumen Personas</h2>
-  <div id="resumenPersonas"></div>
+<h2>📊 Resumen Personas</h2>
+<div id="resumenPersonas"></div>
 </div>
 
 <div class="card">
-  <h2>📍 Resumen por Sitio</h2>
-  <div id="resumenSitios"></div>
+<h2>📍 Resumen por Sitio</h2>
+<div id="resumenSitios"></div>
 </div>
 
 <div class="card">
-  <h2>🧾 Gastos</h2>
-  <div id="listaGastos"></div>
+<h2>📊 Gasto por sitio</h2>
+<canvas id="grafico"></canvas>
 </div>
 
 <div class="card">
-  <h2>📤 Exportar</h2>
-  <button onclick="exportarExcel()">Exportar a Excel</button>
+<h2>🧾 Gastos</h2>
+<div id="listaGastos"></div>
+</div>
+
+<div class="card">
+<button onclick="generarPDF()">📄 Descargar PDF para el grupo</button>
 </div>
 
 <script>
-  const soloLectura = location.search.includes("readonly")
+const params=new URLSearchParams(location.search)
+const soloLectura=params.has("readonly")
+const data=params.get("data")
 
-  let personas = JSON.parse(localStorage.getItem("personas")) || []
-  let gastos = JSON.parse(localStorage.getItem("gastos")) || []
+let personas=[]
+let gastos=[]
 
-  function guardar() {
-    localStorage.setItem("personas", JSON.stringify(personas))
-    localStorage.setItem("gastos", JSON.stringify(gastos))
+if(data){
+  const decoded=JSON.parse(decodeURIComponent(atob(data)))
+  personas=decoded.personas
+  gastos=decoded.gastos
+}else{
+  personas=JSON.parse(localStorage.getItem("personas"))||[]
+  gastos=JSON.parse(localStorage.getItem("gastos"))||[]
+}
+
+function guardar(){
+  if(data) return
+  localStorage.setItem("personas",JSON.stringify(personas))
+  localStorage.setItem("gastos",JSON.stringify(gastos))
+}
+
+function agregarPersona(){
+  if(soloLectura) return
+  personas.push({id:Date.now(),nombre:nombrePersona.value,aportado:+aportePersona.value})
+  nombrePersona.value=aportePersona.value=""
+  guardar();render()
+}
+
+function añadirEfectivo(){
+  if(soloLectura) return
+  const p=personas.find(p=>p.id==personaEfectivo.value)
+  p.aportado+=+efectivoExtra.value
+  efectivoExtra.value=""
+  guardar();render()
+}
+
+function agregarGasto(){
+  if(soloLectura) return
+  const part=[...checkboxPersonas.querySelectorAll("input:checked")].map(c=>+c.value)
+  gastos.push({id:Date.now(),sitio:sitio.value,descripcion:descripcionGasto.value,monto:+montoGasto.value,participantes:part})
+  descripcionGasto.value=montoGasto.value=""
+  guardar();render()
+}
+
+function compartirConDatos(){
+  const payload=btoa(encodeURIComponent(JSON.stringify({personas,gastos})))
+  const url=location.origin+location.pathname+"?readonly&data="+payload
+  navigator.share?navigator.share({title:"Gastos del grupo",url}):navigator.clipboard.writeText(url)&&alert("Enlace copiado")
+}
+
+function generarPDF(){
+  const {jsPDF}=window.jspdf
+  const pdf=new jsPDF()
+  pdf.setFontSize(18)
+  pdf.text("Gastos del grupo",10,15)
+  pdf.setFontSize(14)
+  pdf.text(document.getElementById("totalRestante").innerText,10,25)
+
+  let y=40
+  pdf.setFontSize(12)
+  personas.forEach(p=>{
+    pdf.text(`${p.nombre}: ${p.aportado} €`,10,y)
+    y+=6
+  })
+
+  y+=6
+  pdf.text("Gasto por sitio:",10,y)
+  y+=6
+  Object.entries(calcularSitios()).forEach(([s,m])=>{
+    pdf.text(`${s}: ${m} €`,10,y)
+    y+=6
+  })
+
+  pdf.save("gastos_grupo.pdf")
+}
+
+function calcularSitios(){
+  const s={Flap:0,Colono:0,Lydo:0}
+  gastos.forEach(g=>s[g.sitio]+=g.monto)
+  return s
+}
+
+let chart
+function render(){
+  checkboxPersonas.innerHTML=personaEfectivo.innerHTML=""
+  personas.forEach(p=>{
+    checkboxPersonas.innerHTML+=`<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label>`
+    personaEfectivo.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`
+  })
+
+  const gP={}
+  personas.forEach(p=>gP[p.id]=0)
+  gastos.forEach(g=>g.participantes.forEach(id=>gP[id]+=g.monto/g.participantes.length))
+
+  resumenPersonas.innerHTML="<table><tr><th>Persona</th><th>Aportó</th><th>Gastó</th><th>Balance</th></tr>"+
+    personas.map(p=>`<tr><td>${p.nombre}</td><td>${p.aportado}€</td><td>${gP[p.id].toFixed(2)}€</td><td>${(p.aportado-gP[p.id]).toFixed(2)}€</td></tr>`).join("")+"</table>"
+
+  const sitios=calcularSitios()
+  resumenSitios.innerHTML=`Flap: ${sitios.Flap}€<br>Colono: ${sitios.Colono}€<br>Lydo: ${sitios.Lydo}€`
+
+  listaGastos.innerHTML=""
+  gastos.forEach(g=>listaGastos.innerHTML+=`<div>${g.sitio} – ${g.descripcion} – ${g.monto}€</div>`)
+
+  const totalA=personas.reduce((s,p)=>s+p.aportado,0)
+  const totalG=gastos.reduce((s,g)=>s+g.monto,0)
+  const rest=totalA-totalG
+  const box=document.getElementById("totalRestante")
+  box.innerHTML=`💰 Total restante: ${rest.toFixed(2)} €`
+  box.style.color=rest<0?"#e53935":"#2e7d32"
+
+  if(chart) chart.destroy()
+  chart=new Chart(document.getElementById("grafico"),{
+    type:"doughnut",
+    data:{labels:Object.keys(sitios),datasets:[{data:Object.values(sitios),backgroundColor:["#4CAF50","#2196F3","#FF9800"]}]},
+    options:{plugins:{legend:{position:"bottom"}}}
+  })
+
+  if(soloLectura){
+    document.getElementById("modoLectura").style.display="block"
+    document.getElementById("shareCard").style.display="none"
+    document.querySelectorAll(".editable").forEach(e=>e.style.display="none")
   }
+}
 
-  function agregarPersona() {
-    if (soloLectura || !nombrePersona.value || !aportePersona.value) return
-    personas.push({ id: Date.now(), nombre: nombrePersona.value, aportado: +aportePersona.value })
-    nombrePersona.value = aportePersona.value = ""
-    guardar(); render()
-  }
-
-  function añadirEfectivo() {
-    if (soloLectura) return
-    const p = personas.find(p => p.id == personaEfectivo.value)
-    if (!p || !efectivoExtra.value) return
-    p.aportado += +efectivoExtra.value
-    efectivoExtra.value = ""
-    guardar(); render()
-  }
-
-  function agregarGasto() {
-    if (soloLectura) return
-    const participantes = [...checkboxPersonas.querySelectorAll("input:checked")].map(c => +c.value)
-    if (!descripcionGasto.value || !montoGasto.value || !participantes.length) return
-    gastos.push({
-      id: Date.now(),
-      sitio: sitio.value,
-      descripcion: descripcionGasto.value,
-      monto: +montoGasto.value,
-      participantes
-    })
-    descripcionGasto.value = montoGasto.value = ""
-    guardar(); render()
-  }
-
-  function borrarGasto(id) {
-    if (soloLectura) return
-    gastos = gastos.filter(g => g.id !== id)
-    guardar(); render()
-  }
-
-  function compartirLectura() {
-    const url = location.origin + location.pathname + "?readonly"
-    if (navigator.share) {
-      navigator.share({
-        title: "Gastos del grupo",
-        text: "Vista solo lectura de los gastos",
-        url
-      })
-    } else {
-      navigator.clipboard.writeText(url)
-      alert("Enlace copiado:\n" + url)
-    }
-  }
-
-  function exportarExcel() {
-    let csv = "Persona,Aportó,Gastó,Balance\n"
-    const gastoPersona = {}
-    personas.forEach(p => gastoPersona[p.id] = 0)
-    gastos.forEach(g => {
-      const parte = g.monto / g.participantes.length
-      g.participantes.forEach(id => gastoPersona[id] += parte)
-    })
-    personas.forEach(p => {
-      const balance = p.aportado - gastoPersona[p.id]
-      csv += `${p.nombre},${p.aportado},${gastoPersona[p.id].toFixed(2)},${balance.toFixed(2)}\n`
-    })
-    csv += "\nSitio,Descripción,Importe\n"
-    gastos.forEach(g => csv += `${g.sitio},${g.descripcion},${g.monto}\n`)
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    link.href = URL.createObjectURL(blob)
-    link.download = "gastos_grupo.csv"
-    link.click()
-  }
-
-  function render() {
-    checkboxPersonas.innerHTML = personaEfectivo.innerHTML = ""
-    personas.forEach(p => {
-      checkboxPersonas.innerHTML += `<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label>`
-      personaEfectivo.innerHTML += `<option value="${p.id}">${p.nombre}</option>`
-    })
-
-    const gastoPersona = {}
-    personas.forEach(p => gastoPersona[p.id] = 0)
-    gastos.forEach(g => {
-      const parte = g.monto / g.participantes.length
-      g.participantes.forEach(id => gastoPersona[id] += parte)
-    })
-
-    resumenPersonas.innerHTML =
-      `<table><tr><th>Persona</th><th>Aportó</th><th>Gastó</th><th>Balance</th></tr>` +
-      personas.map(p =>
-        `<tr><td>${p.nombre}</td><td>${p.aportado}€</td><td>${gastoPersona[p.id].toFixed(2)}€</td><td>${(p.aportado-gastoPersona[p.id]).toFixed(2)}€</td></tr>`
-      ).join("") + `</table>`
-
-    const sitios = { Flap:0, Colono:0, Lydo:0 }
-    gastos.forEach(g => sitios[g.sitio] += g.monto)
-    resumenSitios.innerHTML = `Flap: ${sitios.Flap}€<br>Colono: ${sitios.Colono}€<br>Lydo: ${sitios.Lydo}€`
-
-    listaGastos.innerHTML = ""
-    gastos.forEach(g => {
-      listaGastos.innerHTML += `<div>${g.sitio} – ${g.descripcion} – ${g.monto}€ ${!soloLectura ? `<button class="delete" onclick="borrarGasto(${g.id})">X</button>` : ""}</div>`
-    })
-
-    if (soloLectura) {
-      document.getElementById("modoLectura").style.display = "block"
-      document.getElementById("compartirCard").style.display = "none"
-      document.querySelectorAll(".editable").forEach(e => e.style.display = "none")
-    }
-  }
-
-  render()
-
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-  }
+render()
 </script>
 
 </body>
