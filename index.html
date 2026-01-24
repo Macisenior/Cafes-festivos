@@ -4,38 +4,27 @@
 <meta charset="UTF-8">
 <title>Gastos del Grupo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <meta name="theme-color" content="#4CAF50">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-window.firebaseInit = async function() {
+window.firebaseInit = async function () {
+  const firebaseConfig = {
+    apiKey: "AIzaSyDaRSANoydVBrQUBNCGVSrr0kJzcR8ZAIo",
+    authDomain: "gastos-de-grupo.firebaseapp.com",
+    projectId: "gastos-de-grupo",
+    storageBucket: "gastos-de-grupo.appspot.com",
+    messagingSenderId: "1047751444208",
+    appId: "1:1047751444208:web:c90a49d3c574dfbaaf6435"
+  };
 
-  // 🔥 PEGA AQUÍ TU firebaseConfig
- // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDaRSANoydVBrQUBNCGVSrr0kJzcR8ZAIo",
-  authDomain: "gastos-de-grupo.firebaseapp.com",
-  projectId: "gastos-de-grupo",
-  storageBucket: "gastos-de-grupo.firebasestorage.app",
-  messagingSenderId: "1047751444208",
-  appId: "1:1047751444208:web:c90a49d3c574dfbaaf6435"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-  window.db = db;
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
   window.docRef = doc(db, "gastos", "grupo");
 
   await cargarDesdeFirebase();
@@ -57,16 +46,16 @@ th,td{padding:8px;text-align:center}
 th{background:#eee}
 @media(min-width:600px){body{max-width:480px;margin:auto}}
 </style>
-
 </head>
-<body>
+
+<body onload="firebaseInit()">
 
 <h1>💸 Gastos del Grupo</h1>
 
 <div class="card" id="totalRestante"></div>
 
 <div class="card" id="shareCard">
-  <button onclick="compartirConDatos()">👥 Compartir vista del grupo</button>
+  <button onclick="compartir()">👥 Compartir vista del grupo</button>
 </div>
 
 <div id="modoLectura" class="card" style="display:none;background:#fff3cd">
@@ -89,11 +78,7 @@ th{background:#eee}
 
 <div class="card editable">
 <h2>💳 Añadir gasto</h2>
-<select id="sitio">
-<option>Flap</option>
-<option>Colono</option>
-<option>Lydo</option>
-</select>
+<select id="sitio"><option>Flap</option><option>Colono</option><option>Lydo</option></select>
 <input id="descripcionGasto" placeholder="Descripción">
 <input id="montoGasto" type="number" placeholder="Importe €">
 <div id="checkboxPersonas"></div>
@@ -110,15 +95,13 @@ th{background:#eee}
 </div>
 
 <script>
-const params=new URLSearchParams(location.search)
-const soloLectura=params.has("readonly")
+const soloLectura = new URLSearchParams(location.search).has("readonly")
 
-let personas=[]
-let gastos=[]
+let personas = []
+let gastos = []
 let chartPersonas, chartSitios
 
 async function cargarDesdeFirebase(){
-  if(!window.docRef) return
   const snap = await getDoc(window.docRef)
   if(snap.exists()){
     personas = snap.data().personas || []
@@ -127,87 +110,109 @@ async function cargarDesdeFirebase(){
 }
 
 async function guardar(){
-  if(soloLectura || !window.docRef) return
-  await setDoc(window.docRef,{ personas, gastos })
+  if(soloLectura) return
+  await setDoc(window.docRef, { personas, gastos })
 }
 
 function agregarPersona(){
   personas.push({id:Date.now(),nombre:nombrePersona.value,aportado:+aportePersona.value})
-  nombrePersona.value=aportePersona.value=""
-  guardar();render()
+  nombrePersona.value = aportePersona.value = ""
+  guardar(); render()
 }
 
 function añadirEfectivo(){
-  const p=personas.find(p=>p.id==personaEfectivo.value)
-  p.aportado+=+efectivoExtra.value
+  const p = personas.find(p=>p.id==personaEfectivo.value)
+  p.aportado += +efectivoExtra.value
   efectivoExtra.value=""
-  guardar();render()
+  guardar(); render()
 }
 
 function agregarGasto(){
   const part=[...checkboxPersonas.querySelectorAll("input:checked")].map(c=>+c.value)
   gastos.push({id:Date.now(),sitio:sitio.value,descripcion:descripcionGasto.value,monto:+montoGasto.value,participantes:part})
-  descripcionGasto.value=montoGasto.value=""
-  guardar();render()
+  descripcionGasto.value = montoGasto.value = ""
+  guardar(); render()
 }
 
-function compartirConDatos(){
-  const url=location.origin+location.pathname+"?readonly"
-  navigator.share?navigator.share({title:"Gastos del grupo",url}):navigator.clipboard.writeText(url)
-}
-
-function generarPDF(){
-  const {jsPDF}=window.jspdf
-  const pdf=new jsPDF()
-  pdf.setFontSize(18)
-  pdf.text("Gastos del grupo",10,15)
-  let y=30
-  personas.forEach(p=>{
-    const gasto=gastos.reduce((s,g)=>g.participantes.includes(p.id)?s+g.monto/g.participantes.length:s,0)
-    const bal=p.aportado-gasto
-    pdf.text(`${p.nombre} | Balance: ${bal.toFixed(2)} €`,10,y)
-    y+=6
-  })
-  pdf.save("gastos_grupo.pdf")
+function compartir(){
+  const url = location.origin + location.pathname + "?readonly"
+  navigator.share ? navigator.share({url}) : navigator.clipboard.writeText(url)
 }
 
 function render(){
-  checkboxPersonas.innerHTML=personaEfectivo.innerHTML=""
+  checkboxPersonas.innerHTML = personaEfectivo.innerHTML = ""
   personas.forEach(p=>{
-    checkboxPersonas.innerHTML+=`<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label><br>`
-    personaEfectivo.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`
+    checkboxPersonas.innerHTML += `<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label><br>`
+    personaEfectivo.innerHTML += `<option value="${p.id}">${p.nombre}</option>`
   })
 
   const gastoPersona={}
   personas.forEach(p=>gastoPersona[p.id]=0)
   gastos.forEach(g=>g.participantes.forEach(id=>gastoPersona[id]+=g.monto/g.participantes.length))
 
-  resumenPersonas.innerHTML=personas.map(p=>{
-    const bal=p.aportado-gastoPersona[p.id]
+  resumenPersonas.innerHTML = personas.map(p=>{
+    const bal = p.aportado - gastoPersona[p.id]
     return `${p.nombre}: ${bal.toFixed(2)} €`
   }).join("<br>")
 
-  quienDebe.innerHTML=personas.map(p=>{
-    const bal=p.aportado-gastoPersona[p.id]
-    return bal<0?`🔴 ${p.nombre} debe ${Math.abs(bal).toFixed(2)} €`:
-           bal>0?`🟢 ${p.nombre} recibe ${bal.toFixed(2)} €`:
-           `⚪ ${p.nombre} equilibrado`
+  quienDebe.innerHTML = personas.map(p=>{
+    const bal = p.aportado - gastoPersona[p.id]
+    return bal<0 ? `🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`
+         : bal>0 ? `🟢 ${p.nombre} recibe ${bal.toFixed(2)} €`
+         : `⚪ ${p.nombre} equilibrado`
   }).join("<br>")
 
+  const totalA = personas.reduce((s,p)=>s+p.aportado,0)
+  const totalG = gastos.reduce((s,g)=>s+g.monto,0)
+  const rest = totalA-totalG
+  totalRestante.innerHTML = `💰 Total restante: ${rest.toFixed(2)} €`
+  totalRestante.style.textAlign="center"
+  totalRestante.style.fontSize="22px"
+  totalRestante.style.fontWeight="600"
+  totalRestante.style.color = rest<0?"#e53935":"#2e7d32"
+
   if(chartPersonas) chartPersonas.destroy()
-  chartPersonas=new Chart(graficoPersonas,{
+  chartPersonas = new Chart(graficoPersonas,{
     type:"bar",
     data:{
       labels:personas.map(p=>p.nombre),
       datasets:[
-        {label:"Aportado",data:personas.map(p=>p.aportado)},
-        {label:"Gastado",data:personas.map(p=>gastoPersona[p.id])}
+        {label:"Aportado",data:personas.map(p=>p.aportado),backgroundColor:"#4CAF50"},
+        {label:"Gastado",data:personas.map(p=>gastoPersona[p.id]),backgroundColor:"#e53935"}
       ]
-    }
+    },
+    options:{plugins:{legend:{position:"bottom"}}}
   })
+
+  const sitios={Flap:0,Colono:0,Lydo:0}
+  gastos.forEach(g=>sitios[g.sitio]+=g.monto)
+  if(chartSitios) chartSitios.destroy()
+  chartSitios=new Chart(graficoSitios,{
+    type:"doughnut",
+    data:{labels:Object.keys(sitios),datasets:[{data:Object.values(sitios)}]},
+    options:{plugins:{legend:{position:"bottom"}}}
+  })
+
+  if(soloLectura){
+    modoLectura.style.display="block"
+    shareCard.style.display="none"
+    document.querySelectorAll(".editable").forEach(e=>e.style.display="none")
+  }
 }
 
-firebaseInit()
+function generarPDF(){
+  const {jsPDF}=window.jspdf
+  const pdf=new jsPDF()
+  pdf.text("Gastos del grupo",10,15)
+  let y=30
+  personas.forEach(p=>{
+    const gasto=gastos.reduce((s,g)=>g.participantes.includes(p.id)?s+g.monto/g.participantes.length:s,0)
+    const bal=p.aportado-gasto
+    pdf.text(`${p.nombre}: ${bal.toFixed(2)} €`,10,y)
+    y+=6
+  })
+  pdf.save("gastos_grupo.pdf")
+}
 </script>
 
 </body>
