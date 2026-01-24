@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#4CAF50">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{--p:#4CAF50;--f:#f2f2f2;--t:#fff;--r:#e53935}
@@ -82,6 +83,10 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
   <canvas id="graficoSitios"></canvas>
 </div>
 
+<div class="card">
+  <button onclick="generarPDF()">📄 Descargar PDF para el grupo</button>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -140,6 +145,65 @@ window.agregarGasto = async ()=>{
 window.compartir = ()=>{
   const url=location.origin+location.pathname+"?readonly";
   navigator.share ? navigator.share({url}) : navigator.clipboard.writeText(url);
+};
+
+window.generarPDF = ()=>{
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y = 15;
+
+  pdf.setFontSize(20);
+  pdf.text("Gastos del grupo", 10, y);
+  y += 8;
+
+  pdf.setFontSize(12);
+  pdf.text("Fecha: " + new Date().toLocaleDateString(), 10, y);
+  y += 10;
+
+  pdf.setFontSize(14);
+  pdf.text(totalRestante.innerText, 10, y);
+  y += 10;
+
+  pdf.setFontSize(14);
+  pdf.text("Personas", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  personas.forEach(p=>{
+    const gasto = gastos.reduce((s,g)=>g.participantes.includes(p.id)?s+g.monto/g.participantes.length:s,0);
+    const bal = p.aportado - gasto;
+    pdf.text(`${p.nombre} | Aportó ${p.aportado}€ | Gastó ${gasto.toFixed(2)}€ | Balance ${bal.toFixed(2)}€`,10,y);
+    y+=6;
+  });
+
+  y+=6;
+  pdf.setFontSize(14);
+  pdf.text("Quién debe y cuánto",10,y);
+  y+=8;
+
+  pdf.setFontSize(11);
+  personas.forEach(p=>{
+    const gasto = gastos.reduce((s,g)=>g.participantes.includes(p.id)?s+g.monto/g.participantes.length:s,0);
+    const bal = p.aportado - gasto;
+    if(bal<0) pdf.text(`- ${p.nombre} debe ${(-bal).toFixed(2)} €`,10,y);
+    else if(bal>0) pdf.text(`- ${p.nombre} recibe ${bal.toFixed(2)} €`,10,y);
+    y+=6;
+  });
+
+  y+=6;
+  pdf.setFontSize(14);
+  pdf.text("Gasto por sitio",10,y);
+  y+=8;
+
+  const sitios={Flap:0,Colono:0,Lydo:0};
+  gastos.forEach(g=>sitios[g.sitio]+=g.monto);
+  pdf.setFontSize(11);
+  Object.entries(sitios).forEach(([s,m])=>{
+    pdf.text(`${s}: ${m} €`,10,y);
+    y+=6;
+  });
+
+  pdf.save("gastos_grupo.pdf");
 };
 
 function render(){
