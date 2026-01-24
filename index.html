@@ -7,7 +7,6 @@
 <meta name="theme-color" content="#4CAF50">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{--p:#4CAF50;--f:#f2f2f2;--t:#fff;--r:#e53935}
@@ -63,9 +62,25 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
 <button onclick="agregarGasto()">Añadir gasto</button>
 </div>
 
-<div class="card"><h2>👤 Quién debe y cuánto</h2><div id="quienDebe"></div></div>
-<div class="card"><h2>📊 Aportado vs Gastado</h2><canvas id="graficoPersonas"></canvas></div>
-<div class="card"><h2>📊 Gasto por sitio</h2><canvas id="graficoSitios"></canvas></div>
+<div class="card">
+  <h2>📊 Resumen por persona</h2>
+  <div id="resumenPersonas"></div>
+</div>
+
+<div class="card">
+  <h2>👤 Quién debe y cuánto</h2>
+  <div id="quienDebe"></div>
+</div>
+
+<div class="card">
+  <h2>📊 Aportado vs Gastado</h2>
+  <canvas id="graficoPersonas"></canvas>
+</div>
+
+<div class="card">
+  <h2>📊 Gasto por sitio</h2>
+  <canvas id="graficoSitios"></canvas>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -82,12 +97,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const docRef = doc(db, "gastos", "grupo");
+const docRef = doc(db,"gastos","grupo");
 
 const soloLectura = new URLSearchParams(location.search).has("readonly");
 
-let personas = [];
-let gastos = [];
+let personas=[], gastos=[];
 let chartPersonas, chartSitios;
 
 async function cargar(){
@@ -100,65 +114,93 @@ async function cargar(){
 
 async function guardar(){
   if(soloLectura) return;
-  await setDoc(docRef,{ personas, gastos });
+  await setDoc(docRef,{personas,gastos});
 }
 
-window.agregarPersona = async () => {
+window.agregarPersona = async ()=>{
   personas.push({id:Date.now(),nombre:nombrePersona.value,aportado:+aportePersona.value});
-  nombrePersona.value = aportePersona.value = "";
+  nombrePersona.value=aportePersona.value="";
   await guardar(); render();
 };
 
-window.añadirEfectivo = async () => {
-  const p = personas.find(p=>p.id==personaEfectivo.value);
-  p.aportado += +efectivoExtra.value;
+window.añadirEfectivo = async ()=>{
+  const p=personas.find(p=>p.id==personaEfectivo.value);
+  p.aportado+=+efectivoExtra.value;
   efectivoExtra.value="";
   await guardar(); render();
 };
 
-window.agregarGasto = async () => {
+window.agregarGasto = async ()=>{
   const part=[...checkboxPersonas.querySelectorAll("input:checked")].map(c=>+c.value);
   gastos.push({id:Date.now(),sitio:sitio.value,descripcion:descripcionGasto.value,monto:+montoGasto.value,participantes:part});
   descripcionGasto.value=montoGasto.value="";
   await guardar(); render();
 };
 
-window.compartir = () => {
-  const url = location.origin + location.pathname + "?readonly";
+window.compartir = ()=>{
+  const url=location.origin+location.pathname+"?readonly";
   navigator.share ? navigator.share({url}) : navigator.clipboard.writeText(url);
 };
 
 function render(){
-  checkboxPersonas.innerHTML = personaEfectivo.innerHTML = "";
+  checkboxPersonas.innerHTML=personaEfectivo.innerHTML="";
   personas.forEach(p=>{
-    checkboxPersonas.innerHTML += `<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label><br>`;
-    personaEfectivo.innerHTML += `<option value="${p.id}">${p.nombre}</option>`;
+    checkboxPersonas.innerHTML+=`<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label><br>`;
+    personaEfectivo.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`;
   });
 
-  const gastoPersona = {};
+  const gastoPersona={};
   personas.forEach(p=>gastoPersona[p.id]=0);
   gastos.forEach(g=>g.participantes.forEach(id=>gastoPersona[id]+=g.monto/g.participantes.length));
 
-  quienDebe.innerHTML = personas.map(p=>{
-    const bal = p.aportado - gastoPersona[p.id];
-    return bal<0?`🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`:
-           bal>0?`🟢 ${p.nombre} recibe ${bal.toFixed(2)} €`:
-           `⚪ ${p.nombre} equilibrado`;
+  resumenPersonas.innerHTML=personas.map(p=>`
+    <strong>${p.nombre}</strong><br>
+    Aportado: ${p.aportado.toFixed(2)} €<br>
+    Gastado: ${gastoPersona[p.id].toFixed(2)} €<br><br>
+  `).join("");
+
+  quienDebe.innerHTML=personas.map(p=>{
+    const bal=p.aportado-gastoPersona[p.id];
+    return bal<0?`🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`
+         : bal>0?`🟢 ${p.nombre} recibe ${bal.toFixed(2)} €`
+         : `⚪ ${p.nombre} equilibrado`;
   }).join("<br>");
 
-  const total = personas.reduce((s,p)=>s+p.aportado,0) - gastos.reduce((s,g)=>s+g.monto,0);
-  totalRestante.innerHTML = `💰 Total restante: ${total.toFixed(2)} €`;
-  totalRestante.style.color = total<0?"#e53935":"#2e7d32";
+  const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
+  totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
+  totalRestante.style.color=total<0?"#e53935":"#2e7d32";
+
+  if(chartPersonas) chartPersonas.destroy();
+  chartPersonas=new Chart(graficoPersonas,{
+    type:"bar",
+    data:{
+      labels:personas.map(p=>p.nombre),
+      datasets:[
+        {label:"Aportado",data:personas.map(p=>p.aportado),backgroundColor:"#4CAF50"},
+        {label:"Gastado",data:personas.map(p=>gastoPersona[p.id]),backgroundColor:"#e53935"}
+      ]
+    },
+    options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
+  });
+
+  const sitios={Flap:0,Colono:0,Lydo:0};
+  gastos.forEach(g=>sitios[g.sitio]+=g.monto);
+  if(chartSitios) chartSitios.destroy();
+  chartSitios=new Chart(graficoSitios,{
+    type:"doughnut",
+    data:{labels:Object.keys(sitios),datasets:[{data:Object.values(sitios),backgroundColor:["#4CAF50","#2196F3","#FF9800"]}]},
+    options:{plugins:{legend:{position:"bottom"}}}
+  });
+
+  if(soloLectura){
+    modoLectura.style.display="block";
+    shareCard.style.display="none";
+    document.querySelectorAll(".editable").forEach(e=>e.style.display="none");
+  }
 }
 
 await cargar();
 render();
-
-if(soloLectura){
-  modoLectura.style.display="block";
-  shareCard.style.display="none";
-  document.querySelectorAll(".editable").forEach(e=>e.style.display="none");
-}
 </script>
 
 </body>
