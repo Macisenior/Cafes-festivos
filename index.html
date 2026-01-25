@@ -82,7 +82,9 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
   <h2>📊 Gasto por sitio</h2>
   <canvas id="graficoSitios"></canvas>
 </div>
-
+<div class="card">
+  <button onclick="generarPDF()">📄 Descargar PDF PRO</button>
+</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -213,6 +215,100 @@ function render(){
     options:{plugins:{legend:{position:"bottom"}}}
   });
 }
+window.generarPDF = () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y = 15;
+
+  pdf.setFontSize(20);
+  pdf.text("Gastos del grupo", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  pdf.text("Fecha: " + new Date().toLocaleDateString(), 10, y);
+  y += 10;
+
+  pdf.setFontSize(14);
+  pdf.text(totalRestante.innerText, 10, y);
+  y += 12;
+
+  pdf.setFontSize(14);
+  pdf.text("Resumen por persona", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  pdf.text("Nombre", 10, y);
+  pdf.text("Aportó", 70, y);
+  pdf.text("Gastó", 105, y);
+  pdf.text("Balance", 145, y);
+  y += 6;
+
+  pdf.line(10, y, 200, y);
+  y += 4;
+
+  personas.forEach(p => {
+    const gasto = gastos.reduce(
+      (s, g) =>
+        g.participantes.includes(p.id)
+          ? s + g.monto / g.participantes.length
+          : s,
+      0
+    );
+    const bal = p.aportado - gasto;
+
+    pdf.text(p.nombre, 10, y);
+    pdf.text(p.aportado.toFixed(2) + " €", 70, y, { align: "right" });
+    pdf.text(gasto.toFixed(2) + " €", 105, y, { align: "right" });
+    pdf.text(bal.toFixed(2) + " €", 145, y, { align: "right" });
+
+    y += 6;
+    if (y > 270) {
+      pdf.addPage();
+      y = 20;
+    }
+  });
+
+  y += 8;
+  pdf.setFontSize(14);
+  pdf.text("Quién debe y cuánto", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  personas.forEach(p => {
+    const gasto = gastos.reduce(
+      (s, g) =>
+        g.participantes.includes(p.id)
+          ? s + g.monto / g.participantes.length
+          : s,
+      0
+    );
+    const bal = p.aportado - gasto;
+
+    if (bal < 0) {
+      pdf.text(`- ${p.nombre} debe ${(-bal).toFixed(2)} €`, 10, y);
+      y += 6;
+    } else if (bal > 0) {
+      pdf.text(`- ${p.nombre} recibe ${bal.toFixed(2)} €`, 10, y);
+      y += 6;
+    }
+  });
+
+  y += 8;
+  pdf.setFontSize(14);
+  pdf.text("Gasto por sitio", 10, y);
+  y += 8;
+
+  const sitios = { Flap: 0, Colono: 0, Lydo: 0 };
+  gastos.forEach(g => (sitios[g.sitio] += g.monto));
+
+  pdf.setFontSize(11);
+  Object.entries(sitios).forEach(([s, m]) => {
+    pdf.text(`${s}: ${m.toFixed(2)} €`, 10, y);
+    y += 6;
+  });
+
+  pdf.save("gastos_grupo.pdf");
+};
 
 await cargar();
 render();
