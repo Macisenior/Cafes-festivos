@@ -18,6 +18,8 @@ h2{font-size:18px}
 .card{background:var(--t);padding:15px;margin-bottom:15px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
 input,select{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px solid #ccc}
 button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p);color:#fff;font-size:16px;font-weight:600}
+button.secondary{background:#555}
+.hidden{display:none}
 @media(min-width:600px){body{max-width:480px;margin:auto}}
 </style>
 </head>
@@ -28,29 +30,29 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
 
 <div class="card" id="totalRestante"></div>
 
-<div class="card" id="shareCard">
-  <button onclick="compartir()">👥 Compartir vista solo lectura</button>
+<div class="card" id="pinCard">
+  <button onclick="pedirPin()">🔓 Desbloquear edición</button>
 </div>
 
-<div id="modoLectura" class="card" style="display:none;background:#fff3cd">
-👀 Vista solo lectura
+<div class="card hidden" id="modoEdicion">
+  🔐 Edición desbloqueada
 </div>
 
-<div class="card editable">
+<div class="card editable hidden">
 <h2>👤 Añadir persona</h2>
 <input id="nombrePersona" placeholder="Nombre">
 <input id="aportePersona" type="number" placeholder="Aportó €">
 <button onclick="agregarPersona()">Añadir</button>
 </div>
 
-<div class="card editable">
+<div class="card editable hidden">
 <h2>➕ Añadir efectivo</h2>
 <select id="personaEfectivo"></select>
 <input id="efectivoExtra" type="number" placeholder="Cantidad €">
 <button onclick="añadirEfectivo()">Añadir efectivo</button>
 </div>
 
-<div class="card editable">
+<div class="card editable hidden">
 <h2>💳 Añadir gasto</h2>
 <select id="sitio">
   <option>Flap</option>
@@ -84,7 +86,7 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
 </div>
 
 <div class="card">
-  <button onclick="generarPDF()">📄 Descargar PDF para el grupo</button>
+  <button onclick="generarPDF()">📄 Descargar PDF</button>
 </div>
 
 <script type="module">
@@ -104,22 +106,50 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const docRef = doc(db,"gastos","grupo");
 
-const soloLectura = new URLSearchParams(location.search).has("readonly");
-
 let personas=[], gastos=[];
+let pinGuardado = null;
+let edicionActiva = false;
 let chartPersonas, chartSitios;
 
 async function cargar(){
   const snap = await getDoc(docRef);
   if(snap.exists()){
-    personas = snap.data().personas || [];
-    gastos = snap.data().gastos || [];
+    const data = snap.data();
+    personas = data.personas || [];
+    gastos = data.gastos || [];
+    pinGuardado = data.pin || null;
   }
 }
 
 async function guardar(){
-  if(soloLectura) return;
-  await setDoc(docRef,{personas,gastos});
+  if(!edicionActiva) return;
+  await setDoc(docRef,{ personas, gastos, pin: pinGuardado });
+}
+
+window.pedirPin = async ()=>{
+  if(!pinGuardado){
+    const nuevo = prompt("Crea un PIN para editar");
+    if(!nuevo) return;
+    pinGuardado = nuevo;
+    edicionActiva = true;
+    await guardar();
+    activarEdicion();
+    return;
+  }
+
+  const intento = prompt("Introduce el PIN");
+  if(intento === pinGuardado){
+    edicionActiva = true;
+    activarEdicion();
+  } else {
+    alert("PIN incorrecto");
+  }
+};
+
+function activarEdicion(){
+  document.getElementById("pinCard").classList.add("hidden");
+  document.getElementById("modoEdicion").classList.remove("hidden");
+  document.querySelectorAll(".editable").forEach(e=>e.classList.remove("hidden"));
 }
 
 window.agregarPersona = async ()=>{
@@ -142,69 +172,7 @@ window.agregarGasto = async ()=>{
   await guardar(); render();
 };
 
-window.compartir = ()=>{
-  const url=location.origin+location.pathname+"?readonly";
-  navigator.share ? navigator.share({url}) : navigator.clipboard.writeText(url);
-};
-
-window.generarPDF = ()=>{
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
-  let y = 15;
-
-  pdf.setFontSize(20);
-  pdf.text("Gastos del grupo", 10, y);
-  y += 8;
-
-  pdf.setFontSize(12);
-  pdf.text("Fecha: " + new Date().toLocaleDateString(), 10, y);
-  y += 10;
-
-  pdf.setFontSize(14);
-  pdf.text(totalRestante.innerText, 10, y);
-  y += 10;
-
-  pdf.setFontSize(14);
-  pdf.text("Personas", 10, y);
-  y += 8;
-
-  pdf.setFontSize(11);
-  personas.forEach(p=>{
-    const gasto = gastos.reduce((s,g)=>g.participantes.includes(p.id)?s+g.monto/g.participantes.length:s,0);
-    const bal = p.aportado - gasto;
-    pdf.text(`${p.nombre} | Aportó ${p.aportado}€ | Gastó ${gasto.toFixed(2)}€ | Balance ${bal.toFixed(2)}€`,10,y);
-    y+=6;
-  });
-
-  y+=6;
-  pdf.setFontSize(14);
-  pdf.text("Quién debe y cuánto",10,y);
-  y+=8;
-
-  pdf.setFontSize(11);
-  personas.forEach(p=>{
-    const gasto = gastos.reduce((s,g)=>g.participantes.includes(p.id)?s+g.monto/g.participantes.length:s,0);
-    const bal = p.aportado - gasto;
-    if(bal<0) pdf.text(`- ${p.nombre} debe ${(-bal).toFixed(2)} €`,10,y);
-    else if(bal>0) pdf.text(`- ${p.nombre} recibe ${bal.toFixed(2)} €`,10,y);
-    y+=6;
-  });
-
-  y+=6;
-  pdf.setFontSize(14);
-  pdf.text("Gasto por sitio",10,y);
-  y+=8;
-
-  const sitios={Flap:0,Colono:0,Lydo:0};
-  gastos.forEach(g=>sitios[g.sitio]+=g.monto);
-  pdf.setFontSize(11);
-  Object.entries(sitios).forEach(([s,m])=>{
-    pdf.text(`${s}: ${m} €`,10,y);
-    y+=6;
-  });
-
-  pdf.save("gastos_grupo.pdf");
-};
+window.generarPDF = ()=>alert("PDF PRO va en el siguiente paso 😄");
 
 function render(){
   checkboxPersonas.innerHTML=personaEfectivo.innerHTML="";
@@ -232,35 +200,6 @@ function render(){
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
   totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
-  totalRestante.style.color=total<0?"#e53935":"#2e7d32";
-
-  if(chartPersonas) chartPersonas.destroy();
-  chartPersonas=new Chart(graficoPersonas,{
-    type:"bar",
-    data:{
-      labels:personas.map(p=>p.nombre),
-      datasets:[
-        {label:"Aportado",data:personas.map(p=>p.aportado),backgroundColor:"#4CAF50"},
-        {label:"Gastado",data:personas.map(p=>gastoPersona[p.id]),backgroundColor:"#e53935"}
-      ]
-    },
-    options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
-  });
-
-  const sitios={Flap:0,Colono:0,Lydo:0};
-  gastos.forEach(g=>sitios[g.sitio]+=g.monto);
-  if(chartSitios) chartSitios.destroy();
-  chartSitios=new Chart(graficoSitios,{
-    type:"doughnut",
-    data:{labels:Object.keys(sitios),datasets:[{data:Object.values(sitios),backgroundColor:["#4CAF50","#2196F3","#FF9800"]}]},
-    options:{plugins:{legend:{position:"bottom"}}}
-  });
-
-  if(soloLectura){
-    modoLectura.style.display="block";
-    shareCard.style.display="none";
-    document.querySelectorAll(".editable").forEach(e=>e.style.display="none");
-  }
 }
 
 await cargar();
