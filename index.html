@@ -7,7 +7,6 @@
 <meta name="theme-color" content="#4CAF50">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
 :root{--p:#4CAF50;--f:#f2f2f2;--t:#fff;--r:#e53935}
@@ -18,7 +17,6 @@ h2{font-size:18px}
 .card{background:var(--t);padding:15px;margin-bottom:15px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
 input,select{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px solid #ccc}
 button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p);color:#fff;font-size:16px;font-weight:600}
-button.secondary{background:#555}
 .hidden{display:none}
 @media(min-width:600px){body{max-width:480px;margin:auto}}
 </style>
@@ -85,10 +83,6 @@ button.secondary{background:#555}
   <canvas id="graficoSitios"></canvas>
 </div>
 
-<div class="card">
-  <button onclick="generarPDF()">📄 Descargar PDF</button>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -107,17 +101,16 @@ const db = getFirestore(app);
 const docRef = doc(db,"gastos","grupo");
 
 let personas=[], gastos=[];
-let pinGuardado = null;
-let edicionActiva = false;
+let pinGuardado=null, edicionActiva=false;
 let chartPersonas, chartSitios;
 
 async function cargar(){
   const snap = await getDoc(docRef);
   if(snap.exists()){
-    const data = snap.data();
-    personas = data.personas || [];
-    gastos = data.gastos || [];
-    pinGuardado = data.pin || null;
+    const d = snap.data();
+    personas = d.personas || [];
+    gastos = d.gastos || [];
+    pinGuardado = d.pin || null;
   }
 }
 
@@ -141,14 +134,12 @@ window.pedirPin = async ()=>{
   if(intento === pinGuardado){
     edicionActiva = true;
     activarEdicion();
-  } else {
-    alert("PIN incorrecto");
-  }
+  } else alert("PIN incorrecto");
 };
 
 function activarEdicion(){
-  document.getElementById("pinCard").classList.add("hidden");
-  document.getElementById("modoEdicion").classList.remove("hidden");
+  pinCard.classList.add("hidden");
+  modoEdicion.classList.remove("hidden");
   document.querySelectorAll(".editable").forEach(e=>e.classList.remove("hidden"));
 }
 
@@ -171,8 +162,6 @@ window.agregarGasto = async ()=>{
   descripcionGasto.value=montoGasto.value="";
   await guardar(); render();
 };
-
-window.generarPDF = ()=>alert("PDF PRO va en el siguiente paso 😄");
 
 function render(){
   checkboxPersonas.innerHTML=personaEfectivo.innerHTML="";
@@ -200,6 +189,29 @@ function render(){
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
   totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
+  totalRestante.style.color=total<0?"#e53935":"#2e7d32";
+
+  if(chartPersonas) chartPersonas.destroy();
+  chartPersonas=new Chart(graficoPersonas,{
+    type:"bar",
+    data:{
+      labels:personas.map(p=>p.nombre),
+      datasets:[
+        {label:"Aportado",data:personas.map(p=>p.aportado),backgroundColor:"#4CAF50"},
+        {label:"Gastado",data:personas.map(p=>gastoPersona[p.id]),backgroundColor:"#e53935"}
+      ]
+    },
+    options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
+  });
+
+  const sitios={Flap:0,Colono:0,Lydo:0};
+  gastos.forEach(g=>sitios[g.sitio]+=g.monto);
+  if(chartSitios) chartSitios.destroy();
+  chartSitios=new Chart(graficoSitios,{
+    type:"doughnut",
+    data:{labels:Object.keys(sitios),datasets:[{data:Object.values(sitios),backgroundColor:["#4CAF50","#2196F3","#FF9800"]}]},
+    options:{plugins:{legend:{position:"bottom"}}}
+  });
 }
 
 await cargar();
