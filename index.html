@@ -60,7 +60,8 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
   <option>Flap</option>
   <option>Colono</option>
   <option>Lydo</option>
-</select>
+</select> 
+<input id="fechaGasto" type="date">
 <input id="descripcionGasto" placeholder="Descripción">
 <input id="montoGasto" type="number" placeholder="Importe €">
 <div id="checkboxPersonas"></div>
@@ -89,6 +90,10 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
 <div class="card">
   <button onclick="generarPDF()">📄 Descargar PDF PRO</button>
 </div>
+<div class="card">
+  <button onclick="generarPDFResumen()">📄 Resumen</button>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
@@ -163,13 +168,32 @@ window.añadirEfectivo = async ()=>{
   efectivoExtra.value="";
   await guardar(); render();
 };
+window.agregarGasto = async () => {
+  const part = [...checkboxPersonas.querySelectorAll("input:checked")]
+    .map(c => +c.value);
 
-window.agregarGasto = async ()=>{
-  const part=[...checkboxPersonas.querySelectorAll("input:checked")].map(c=>+c.value);
-  gastos.push({id:Date.now(),sitio:sitio.value,descripcion:descripcionGasto.value,monto:+montoGasto.value,participantes:part});
-  descripcionGasto.value=montoGasto.value="";
-  await guardar(); render();
+  const fecha = fechaGasto.value
+    ? new Date(fechaGasto.value).toLocaleDateString()
+    : new Date().toLocaleDateString();
+
+  gastos.push({
+    id: Date.now(),
+    sitio: sitio.value,
+    descripcion: descripcionGasto.value,
+    monto: +montoGasto.value,
+    participantes: part,
+    fecha
+  });
+
+  descripcionGasto.value = "";
+  montoGasto.value = "";
+  fechaGasto.value = "";
+
+  await guardar();
+  render();
 };
+
+
 window.compartirSoloLectura = () => {
   const url = location.origin + location.pathname + "?readonly";
   if (navigator.share) {
@@ -189,12 +213,33 @@ function render(){
   const gastoPersona={};
   personas.forEach(p=>gastoPersona[p.id]=0);
   gastos.forEach(g=>g.participantes.forEach(id=>gastoPersona[id]+=g.monto/g.participantes.length));
+  
+resumenPersonas.innerHTML = personas.map(p => {
+  // gastos por sitio de esta persona
+  const porSitio = {};
 
-  resumenPersonas.innerHTML=personas.map(p=>`
+  gastos.forEach(g => {
+    if (g.participantes.includes(p.id)) {
+      const parte = g.monto / g.participantes.length;
+      porSitio[g.sitio] = (porSitio[g.sitio] || 0) + parte;
+    }
+  });
+
+  const textoSitios = Object.keys(porSitio).length
+    ? Object.entries(porSitio)
+        .map(([s,m]) => `${s} (${m.toFixed(2)} €)`)
+        .join(", ")
+    : "—";
+
+  return `
     <strong>${p.nombre}</strong><br>
     Aportado: ${p.aportado.toFixed(2)} €<br>
-    Gastado: ${gastoPersona[p.id].toFixed(2)} €<br><br>
-  `).join("");
+    Gastado: ${gastoPersona[p.id].toFixed(2)} €<br>
+    <em>Gastos en:</em> ${textoSitios}<br><br>
+  `;
+}).join("");
+
+  
 
   quienDebe.innerHTML=personas.map(p=>{
     const bal=p.aportado-gastoPersona[p.id];
@@ -337,6 +382,78 @@ window.generarPDF = () => {
   pdf.addImage(imgSitios, "PNG", 40, y, 120, 120);
 
   pdf.save("gastos_grupo.pdf");
+};
+window.generarPDFResumen = () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y = 15;
+
+  // TÍTULO
+  pdf.setFontSize(20);
+  pdf.text("Resumen de gastos", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  pdf.text("Generado el: " + new Date().toLocaleDateString(), 10, y);
+  y += 12;
+
+  // ===== AGRUPAR DATOS =====
+  const resumen = {};
+
+  gastos.forEach(g => {
+    const fecha = g.fecha || new Date().toLocaleDateString();
+
+    if (!resumen[fecha]) resumen[fecha] = {};
+
+    g.participantes.forEach(idPersona => {
+      const persona = personas.find(p => p.id === idPersona);
+      if (!persona) return;
+
+      if (!resumen[fecha][persona.nombre]) {
+        resumen[fecha][persona.nombre] = {};
+      }
+
+      const parte = g.monto / g.participantes.length;
+      resumen[fecha][persona.nombre][g.sitio] =
+        (resumen[fecha][persona.nombre][g.sitio] || 0) + parte;
+    });
+  });
+
+  // ===== PINTAR PDF =====
+  Object.entries(resumen).forEach(([fecha, personasDia]) => {
+    // Nueva página si hace falta
+    if (y > 260) {
+      pdf.addPage();
+      y = 20;
+    }
+
+    pdf.setFontSize(14);
+    pdf.text("📅 " + fecha, 10, y);
+    y += 8;
+
+    Object.entries(personasDia).forEach(([nombre, sitios]) => {
+      pdf.setFontSize(12);
+      pdf.text(nombre, 14, y);
+      y += 6;
+
+      pdf.setFontSize(11);
+      Object.entries(sitios).forEach(([sitio, monto]) => {
+        pdf.text(`- ${sitio}: ${monto.toFixed(2)} EUR`, 20, y);
+        y += 5;
+
+        if (y > 270) {
+          pdf.addPage();
+          y = 20;
+        }
+      });
+
+      y += 4;
+    });
+
+    y += 4;
+  });
+
+  pdf.save("resumen_gastos_detallado.pdf");
 };
 
 await cargar();
