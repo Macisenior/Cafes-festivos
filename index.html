@@ -299,7 +299,7 @@ resumenPersonas.innerHTML = personas.map(p => {
   quienDebe.innerHTML=personas.map(p=>{
     const bal=p.aportado-gastoPersona[p.id];
     return bal<0?`🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`
-         : bal>0?`🟢 ${p.nombre} recibe ${bal.toFixed(2)} €`
+         : bal>0?`🟢 ${p.nombre} dispone de :  ${bal.toFixed(2)} €`
          : `⚪ ${p.nombre} equilibrado`;
   }).join("<br>");
 
