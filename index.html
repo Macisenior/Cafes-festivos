@@ -93,22 +93,77 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
 <div class="card">
   <button onclick="generarPDFResumen()">📄 Resumen</button>
 </div>
+<div class="card editable hidden">
+  <button onclick="exportarBackup()">💾 Copia de seguridad</button>
+</div>
+
+<div class="card editable hidden">
+  <input type="file" id="archivoBackup" accept=".json">
+  <button onclick="importarBackup()">♻️ Restaurar copia</button>
+</div>
 
 <script type="module">
+window.exportarBackup = () => {
+  const backup = {
+    fecha: new Date().toISOString(),
+    personas,
+    gastos
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(backup, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "backup_gastos_grupo.json";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+window.importarBackup = async () => {
+  const input = document.getElementById("archivoBackup");
+  if (!input.files.length) {
+    alert("Selecciona un archivo de copia");
+    return;
+  }
+
+  const file = input.files[0];
+  const texto = await file.text();
+  const data = JSON.parse(texto);
+
+  if (!data.personas || !data.gastos) {
+    alert("Archivo no válido");
+    return;
+  }
+
+  if (!confirm("Esto reemplazará los datos actuales. ¿Continuar?")) return;
+
+  personas = data.personas;
+  gastos = data.gastos;
+
+  await guardar();
+  render();
+
+  alert("Copia restaurada correctamente");
+};
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 const soloLectura = new URLSearchParams(location.search).has("readonly");
-
 const firebaseConfig = {
   apiKey: "AIzaSyDaRSANoydVBrQUBNCGVSrr0kJzcR8ZAIo",
   authDomain: "gastos-de-grupo.firebaseapp.com",
   projectId: "gastos-de-grupo",
-  storageBucket: "gastos-de-grupo.appspot.com",
+  storageBucket: "gastos-de-grupo.firebasestorage.app",
   messagingSenderId: "1047751444208",
   appId: "1:1047751444208:web:c90a49d3c574dfbaaf6435"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
 const db = getFirestore(app);
 const docRef = doc(db,"gastos","grupo");
 
