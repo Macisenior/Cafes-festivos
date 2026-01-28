@@ -443,72 +443,95 @@ window.generarPDFResumen = () => {
   const pdf = new jsPDF();
   let y = 15;
 
-  // TÍTULO
+  const totalAportado = personas.reduce((s, p) => s + p.aportado, 0);
+  const totalGastado = gastos.reduce((s, g) => s + g.monto, 0);
+  const saldoGrupo = totalAportado - totalGastado;
+
+  /* ===== TÍTULO ===== */
   pdf.setFontSize(20);
-  pdf.text("Resumen de gastos", 10, y);
+  pdf.text("Resumen de gastos del grupo", 105, y, { align: "center" });
+  y += 6;
+
+  pdf.setFontSize(10);
+  pdf.text("Generado el " + new Date().toLocaleDateString(), 105, y, { align: "center" });
+  y += 10;
+
+  /* ===== RESUMEN GENERAL ===== */
+  pdf.setTextColor(30, 136, 229); // azul
+  pdf.setFontSize(14);
+  pdf.text("Resumen general", 10, y);
+  y += 6;
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(11);
+  pdf.text(`Total aportado: ${totalAportado.toFixed(2)} €`, 14, y); y += 5;
+  pdf.text(`Total gastado: ${totalGastado.toFixed(2)} €`, 14, y); y += 5;
+  pdf.text(`Saldo del grupo: ${saldoGrupo.toFixed(2)} €`, 14, y);
   y += 8;
 
-  pdf.setFontSize(11);
-  pdf.text("Generado el: " + new Date().toLocaleDateString(), 10, y);
-  y += 12;
+  /* ===== PERSONAS ===== */
+  pdf.setTextColor(67, 160, 71); // verde
+  pdf.setFontSize(14);
+  pdf.text("Personas", 10, y);
+  y += 6;
 
-  // ===== AGRUPAR DATOS =====
-  const resumen = {};
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(10);
+  pdf.text("Nombre", 10, y);
+  pdf.text("Aportó", 60, y);
+  pdf.text("Gastó", 100, y);
+  pdf.text("Saldo", 145, y);
+  y += 4;
+  pdf.line(10, y, 200, y);
+  y += 4;
 
-  gastos.forEach(g => {
-    const fecha = g.fecha || new Date().toLocaleDateString();
+  personas.forEach(p => {
+    const gastado = gastos.reduce(
+      (s, g) =>
+        g.participantes.includes(p.id)
+          ? s + g.monto / g.participantes.length
+          : s,
+      0
+    );
+    const saldo = p.aportado - gastado;
 
-    if (!resumen[fecha]) resumen[fecha] = {};
+    pdf.text(p.nombre, 10, y);
+    pdf.text(p.aportado.toFixed(2) + " €", 60, y);
+    pdf.text(gastado.toFixed(2) + " €", 100, y);
 
-    g.participantes.forEach(idPersona => {
-      const persona = personas.find(p => p.id === idPersona);
-      if (!persona) return;
-
-      if (!resumen[fecha][persona.nombre]) {
-        resumen[fecha][persona.nombre] = {};
-      }
-
-      const parte = g.monto / g.participantes.length;
-      resumen[fecha][persona.nombre][g.sitio] =
-        (resumen[fecha][persona.nombre][g.sitio] || 0) + parte;
-    });
-  });
-
-  // ===== PINTAR PDF =====
-  Object.entries(resumen).forEach(([fecha, personasDia]) => {
-    // Nueva página si hace falta
-    if (y > 260) {
-      pdf.addPage();
-      y = 20;
+    if (saldo >= 0) {
+      pdf.setTextColor(67, 160, 71);
+    } else {
+      pdf.setTextColor(229, 57, 53);
     }
+    pdf.text(saldo.toFixed(2) + " €", 145, y);
+    pdf.setTextColor(0, 0, 0);
 
-    pdf.setFontSize(14);
-    pdf.text("📅 " + fecha, 10, y);
-    y += 8;
-
-    Object.entries(personasDia).forEach(([nombre, sitios]) => {
-      pdf.setFontSize(12);
-      pdf.text(nombre, 14, y);
-      y += 6;
-
-      pdf.setFontSize(11);
-      Object.entries(sitios).forEach(([sitio, monto]) => {
-        pdf.text(`- ${sitio}: ${monto.toFixed(2)} EUR`, 20, y);
-        y += 5;
-
-        if (y > 270) {
-          pdf.addPage();
-          y = 20;
-        }
-      });
-
-      y += 4;
-    });
-
-    y += 4;
+    y += 6;
   });
 
-  pdf.save("resumen_gastos_detallado.pdf");
+  y += 6;
+
+  /* ===== SITIOS ===== */
+  pdf.setTextColor(255, 143, 0); // naranja
+  pdf.setFontSize(14);
+  pdf.text("Gasto por sitio", 10, y);
+  y += 6;
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(11);
+
+  const porSitio = {};
+  gastos.forEach(g => {
+    porSitio[g.sitio] = (porSitio[g.sitio] || 0) + g.monto;
+  });
+
+  Object.entries(porSitio).forEach(([sitio, monto]) => {
+    pdf.text(`${sitio}: ${monto.toFixed(2)} €`, 14, y);
+    y += 5;
+  });
+
+  pdf.save("resumen_gastos_1_pagina.pdf");
 };
 
 await cargar();
