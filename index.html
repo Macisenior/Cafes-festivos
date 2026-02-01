@@ -77,7 +77,7 @@ button:active {
 
 <div class="card" id="totalRestante"></div>
 <div class="card" id="shareCard">
-  <button onclick="compartirSoloLectura()">👥 Compartir vista solo lectura</button>
+  <button onclick="compartirSoloLectura()" style="background: orangered;">👥 Compartir vista solo lectura</button>
 </div>
 
 <div class="card" id="pinCard">
@@ -99,7 +99,7 @@ button:active {
 <h2>➕ Añadir efectivo</h2>
 <select id="personaEfectivo"></select>
 <input id="efectivoExtra" type="number" placeholder="Cantidad €">
-<button onclick="añadirEfectivo()">Añadir efectivo</button>
+<button onclick="añadirEfectivo()" style="background: yellowgreen;">Añadir efectivo</button>
 </div>
 
 <div class="card editable hidden">
@@ -113,7 +113,7 @@ button:active {
 <input id="descripcionGasto" placeholder="Descripción">
 <input id="montoGasto" type="number" placeholder="Importe €">
 <div id="checkboxPersonas"></div>
-<button onclick="agregarGasto()">Añadir gasto</button>
+<button onclick="agregarGasto()" style="background: orange;">Añadir gasto</button>
 </div>
 
 <div class="card">
@@ -140,18 +140,18 @@ button:active {
   <canvas id="graficoSitios"></canvas>
 </div>
 <div class="card">
-  <button onclick="generarPDF()">📄 Descargar PDF PRO</button>
+  <button onclick="generarPDF()" style="background: darkviolet;" >📄 Descargar PDF PRO</button>
 </div>
 <div class="card">
-  <button onclick="generarPDFResumen()">📄 Resumen</button>
+  <button onclick="generarPDFResumen()" style="background: violet;">📊 Resumen</button>
 </div>
 <div class="card editable hidden">
-  <button onclick="exportarBackup()">💾 Copia de seguridad</button>
+  <button onclick="exportarBackup()" style="background: blue;">💾 Copia de seguridad</button>
 </div>
 
 <div class="card editable hidden">
   <input type="file" id="archivoBackup" accept=".json">
-  <button onclick="importarBackup()">♻️ Restaurar copia</button>
+  <button onclick="importarBackup()" style="background: dodgerblue;">♻️ Restaurar copia</button>
 </div>
 
 <script type="module">
@@ -349,15 +349,20 @@ resumenPersonas.innerHTML = personas.map(p => {
   
 
   quienDebe.innerHTML=personas.map(p=>{
-    const bal=p.aportado-gastoPersona[p.id];
-    return bal<0?`🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`
-         : bal>0?`🟢 ${p.nombre} dispone de :  ${bal.toFixed(2)} €`
-         : `⚪ ${p.nombre} equilibrado`;
+    var bal=p.aportado-gastoPersona[p.id];
+	if (bal >-0.01 && bal <0.01) bal = 0;
+    return bal<-0.01?`🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`
+         : bal>0.01?`🟢 ${p.nombre} dispone de :  ${bal.toFixed(2)} €`
+         : `⚪ ${p.nombre} equilibrado ${bal.toFixed(2)} €`;
   }).join("<br>");
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
   totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
   totalRestante.style.color=total<0?"#e53935":"#2e7d32";
+  totalRestante.style.fontWeight = "bold";
+  totalRestante.style.textDecoration = "underline";
+  totalRestante.style.textAlign = "center";
+  totalRestante.style.fontSize = "20px";
 
   if(chartPersonas) chartPersonas.destroy();
   chartPersonas=new Chart(graficoPersonas,{
@@ -545,16 +550,20 @@ window.generarPDFResumen = () => {
           : s,
       0
     );
-    const saldo = p.aportado - gastado;
-
+    var saldo = p.aportado - gastado;
+	
     pdf.text(p.nombre, 10, y);
     pdf.text(p.aportado.toFixed(2) + " €", 60, y);
     pdf.text(gastado.toFixed(2) + " €", 100, y);
 
     if (saldo >= 0) {
       pdf.setTextColor(67, 160, 71);
-    } else {
+    } else if (saldo <= -0.01) {
       pdf.setTextColor(229, 57, 53);
+    }
+	else {
+		saldo = 0;
+		pdf.setTextColor(0, 0, 0);
     }
     pdf.text(saldo.toFixed(2) + " €", 145, y);
     pdf.setTextColor(0, 0, 0);
