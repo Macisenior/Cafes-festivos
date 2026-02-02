@@ -99,6 +99,13 @@ button:active {
 <h2>➕ Añadir efectivo</h2>
 <select id="personaEfectivo"></select>
 <input id="efectivoExtra" type="number" placeholder="Cantidad €">
+<label for="cashDate">Fecha del ingreso</label>
+<input
+  type="date"
+  id="cashDate"
+  name="cashDate"
+/>
+
 <button onclick="añadirEfectivo()" style="background: yellowgreen;">Añadir efectivo</button>
 </div>
 
@@ -156,11 +163,12 @@ button:active {
 
 <script type="module">
 window.exportarBackup = () => {
-  const backup = {
-    fecha: new Date().toISOString(),
-    personas,
-    gastos
-  };
+ const backup = {
+  fecha: new Date().toISOString(),
+  personas,
+  gastos,
+  aportaciones
+};
 
   const blob = new Blob(
     [JSON.stringify(backup, null, 2)],
@@ -191,7 +199,7 @@ window.importarBackup = async () => {
   }
 
   if (!confirm("Esto reemplazará los datos actuales. ¿Continuar?")) return;
-
+  aportaciones = data.aportaciones || [];
   personas = data.personas;
   gastos = data.gastos;
 
@@ -218,8 +226,7 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 const docRef = doc(db,"gastos","grupo");
-
-let personas=[], gastos=[];
+let personas = [], gastos = [], aportaciones = [];
 let pinGuardado=null, edicionActiva=false;
 let chartPersonas, chartSitios;
 
@@ -227,6 +234,7 @@ async function cargar(){
   const snap = await getDoc(docRef);
   if(snap.exists()){
     const d = snap.data();
+	aportaciones = d.aportaciones || [];
     personas = d.personas || [];
     gastos = d.gastos || [];
     pinGuardado = d.pin || null;
@@ -234,7 +242,12 @@ async function cargar(){
 }
 async function guardar(){
   if(!edicionActiva || soloLectura) return;
-  await setDoc(docRef,{ personas, gastos, pin: pinGuardado });
+  await setDoc(docRef,{
+  personas,
+  gastos,
+  aportaciones,
+  pin: pinGuardado
+});
 }
 
 window.pedirPin = async ()=>{
@@ -269,12 +282,34 @@ window.agregarPersona = async ()=>{
   await guardar(); render();
 };
 
-window.añadirEfectivo = async ()=>{
-  const p=personas.find(p=>p.id==personaEfectivo.value);
-  p.aportado+=+efectivoExtra.value;
-  efectivoExtra.value="";
-  await guardar(); render();
+window.añadirEfectivo = async () => {
+  const p = personas.find(p => p.id == personaEfectivo.value);
+  const amount = +efectivoExtra.value;
+  const date = cashDate.value;
+
+  if (!p || !amount || !date) {
+    alert("Faltan datos");
+    return;
+  }
+
+  // sumar al total de la persona
+  p.aportado += amount;
+
+  // guardar histórico
+  aportaciones.push({
+    personaId: p.id,
+    nombre: p.nombre,
+    amount,
+    date
+  });
+
+  efectivoExtra.value = "";
+  cashDate.value = new Date().toISOString().split("T")[0];
+
+  await guardar();
+  render();
 };
+
 window.agregarGasto = async () => {
   const part = [...checkboxPersonas.querySelectorAll("input:checked")]
     .map(c => +c.value);
@@ -495,6 +530,11 @@ window.generarPDF = () => {
 
   pdf.save("gastos_grupo.pdf");
 };
+function formatDate(dateStr) {
+  if (!dateStr) return "-";
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+}
 window.generarPDFResumen = () => {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
@@ -572,6 +612,32 @@ window.generarPDFResumen = () => {
   });
 
   y += 6;
+/* ===== APORTACIONES EN EFECTIVO ===== */
+pdf.setTextColor(30, 136, 229); // azul
+pdf.setFontSize(14);
+pdf.text("Aportaciones en efectivo", 10, y);
+y += 6;
+
+pdf.setTextColor(0, 0, 0);
+pdf.setFontSize(10);
+
+// Cabecera
+pdf.text("Persona", 10, y);
+pdf.text("Cantidad", 80, y);
+pdf.text("Fecha", 130, y);
+y += 4;
+pdf.line(10, y, 200, y);
+y += 4;
+
+// Aquí asumimos que tienes un array `cash` o similar
+aportaciones.forEach(a => {
+  pdf.text(a.nombre, 10, y);
+  pdf.text(a.amount.toFixed(2) + " €", 80, y);
+  pdf.text(formatDate(a.date), 130, y);
+  y += 6;
+});
+
+y += 6;
 
   /* ===== SITIOS ===== */
   pdf.setTextColor(255, 143, 0); // naranja
@@ -602,6 +668,15 @@ if (soloLectura) {
 }
 document.getElementById("fechaListado").innerText =
   "Listado actual · " + new Date().toLocaleDateString();
+  const cashDateInput = document.getElementById("cashDate");
+
+if (cashDateInput) {
+  const today = new Date().toISOString().split("T")[0];
+  cashDateInput.value = today;
+}
+
+
+  
 
 </script>
 
