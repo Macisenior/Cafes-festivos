@@ -162,6 +162,48 @@ button:active {
 </div>
 
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } 
+  from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const soloLectura = new URLSearchParams(location.search).has("readonly");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDaRSANoydVBrQUBNCGVSrr0kJzcR8ZAIo",
+  authDomain: "gastos-de-grupo.firebaseapp.com",
+  projectId: "gastos-de-grupo",
+  storageBucket: "gastos-de-grupo.firebasestorage.app",
+  messagingSenderId: "1047751444208",
+  appId: "1:1047751444208:web:c90a49d3c574dfbaaf6435"
+};
+
+// 🔥 Firebase (UNA SOLA VEZ)
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const docRef = doc(db, "gastos", "grupo");
+
+// 🔐 Auth anónima
+signInAnonymously(auth).catch(console.error);
+
+// ✅ Esperar a auth
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    console.log("Auth OK", user.uid);
+    await cargar();   // ⬅️ esperar a Firestore
+    render();         // ⬅️ ahora sí hay datos
+  }
+});
+
+
+// ---- estado ----
+let personas = [];
+let gastos = [];
+let aportaciones = [];
+let pinGuardado = null;
+let edicionActiva = false;
+let chartPersonas, chartSitios;
 window.exportarBackup = () => {
  const backup = {
   fecha: new Date().toISOString(),
@@ -181,11 +223,11 @@ window.exportarBackup = () => {
   a.download = "backup_gastos_grupo.json";
   a.click();
   URL.revokeObjectURL(url);
-};
-window.importarBackup = async () => {
+  };
+  window.importarBackup = async () => {
   const input = document.getElementById("archivoBackup");
   if (!input.files.length) {
-    alert("Selecciona un archivo de copia");
+    alert("Selecciona un archivo");
     return;
   }
 
@@ -199,36 +241,14 @@ window.importarBackup = async () => {
   }
 
   if (!confirm("Esto reemplazará los datos actuales. ¿Continuar?")) return;
+
   aportaciones = data.aportaciones || [];
   personas = data.personas;
   gastos = data.gastos;
 
   await guardar();
   render();
-
-  alert("Copia restaurada correctamente");
-};
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-const soloLectura = new URLSearchParams(location.search).has("readonly");
-const firebaseConfig = {
-  apiKey: "AIzaSyDaRSANoydVBrQUBNCGVSrr0kJzcR8ZAIo",
-  authDomain: "gastos-de-grupo.firebaseapp.com",
-  projectId: "gastos-de-grupo",
-  storageBucket: "gastos-de-grupo.firebasestorage.app",
-  messagingSenderId: "1047751444208",
-  appId: "1:1047751444208:web:c90a49d3c574dfbaaf6435"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-
-const db = getFirestore(app);
-const docRef = doc(db,"gastos","grupo");
-let personas = [], gastos = [], aportaciones = [];
-let pinGuardado=null, edicionActiva=false;
-let chartPersonas, chartSitios;
+};  
 
 async function cargar(){
   const snap = await getDoc(docRef);
@@ -238,6 +258,9 @@ async function cargar(){
     personas = d.personas || [];
     gastos = d.gastos || [];
     pinGuardado = d.pin || null;
+	    console.log("Datos cargados:", personas, gastos);
+  } else {
+    console.log("Documento NO existe");
   }
 }
 async function guardar(){
