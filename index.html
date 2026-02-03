@@ -117,7 +117,8 @@ button:active {
   <option>Lydo</option>
 </select> 
 <input id="fechaGasto" type="date">
-<input id="descripcionGasto" placeholder="Descripción">
+<input id="descripcionGasto" placeholder="Descripción" value="cafes">
+
 <input id="montoGasto" type="number" placeholder="Importe €">
 <div id="checkboxPersonas"></div>
 <button onclick="agregarGasto()" style="background: orange;">Añadir gasto</button>
@@ -264,14 +265,21 @@ async function cargar(){
   }
 }
 async function guardar(){
-  if(!edicionActiva || soloLectura) return;
-  await setDoc(docRef,{
-  personas,
-  gastos,
-  aportaciones,
-  pin: pinGuardado
-});
+  if (!edicionActiva || soloLectura) return;
+
+  try {
+    await setDoc(docRef, {
+      personas,
+      gastos,
+      aportaciones,
+      pin: pinGuardado
+    });
+    console.log("✅ Guardado en Firestore");
+  } catch (e) {
+    console.error("❌ Error al guardar:", e);
+  }
 }
+
 
 window.pedirPin = async ()=>{
   if(!pinGuardado){
@@ -350,7 +358,7 @@ window.agregarGasto = async () => {
     fecha
   });
 
-  descripcionGasto.value = "";
+  descripcionGasto.value = "cafes";
   montoGasto.value = "";
   fechaGasto.value = "";
 
