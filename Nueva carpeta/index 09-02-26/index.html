@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gastos del Grupo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#4CAF50">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root{--p:#4CAF50;--f:#f2f2f2;--t:#fff;--r:#e53935}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--f);padding:12px}
+h1{text-align:center}
+h2{font-size:18px}
+.card{background:var(--t);padding:15px;margin-bottom:15px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+input,select{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px solid #ccc}
+button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p);color:#fff;font-size:16px;font-weight:600}
+.hidden{display:none}
+@media(min-width:600px){body{max-width:480px;margin:auto}}
+.fecha-listado {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #5c9ded; /* azul suave */
+  margin-top: 2px;
+}
+
+ {
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+ {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--p);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  transition: transform .08s ease, box-shadow .08s ease, opacity .08s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+  box-shadow: 0 3px 8px rgba(0,0,0,.15);
+  opacity: 0.95;
+}
+
+.saldo-positivo {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.saldo-negativo {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.saldo-cero {
+  color: #555;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<h1>💸 Gastos del Grupo</h1>
+
+<div class="card" id="totalRestante"></div>
+<div class="card" id="shareCard">
+  <button onclick="compartirSoloLectura()" style="background: orangered;">👥 Compartir vista solo lectura</button>
+</div>
+
+<div class="card" id="pinCard">
+  <button onclick="pedirPin()">🔓 Desbloquear edición</button>
+</div>
+
+<div class="card hidden" id="modoEdicion">
+  🔐 Edición desbloqueada
+</div>
+
+<div class="card editable hidden">
+<h2>👤 Añadir persona</h2>
+<input id="nombrePersona" placeholder="Nombre">
+<input id="aportePersona" type="number" placeholder="Aportó €">
+<button onclick="agregarPersona()">Añadir</button>
+</div>
+
+<div class="card editable hidden">
+<h2>➕ Añadir efectivo</h2>
+<select id="personaEfectivo"></select>
+<input id="efectivoExtra" type="number" placeholder="Cantidad €">
+<label for="cashDate">Fecha del ingreso</label>
+<input
+  type="date"
+  id="cashDate"
+  name="cashDate"
+/>
+
+<button onclick="añadirEfectivo()" style="background: yellowgreen;">Añadir efectivo</button>
+</div>
+
+<div class="card editable hidden">
+<h2>💳 Añadir gasto</h2>
+<select id="sitio">
+  <option>Flap</option>
+  <option>Colono</option>
+  <option>Lydo</option>
+</select> 
+<input id="fechaGasto" type="date">
+<input id="descripcionGasto" placeholder="Descripción" value="cafes">
+
+<input id="montoGasto" type="number" placeholder="Importe €">
+<div id="checkboxPersonas"></div>
+<button onclick="agregarGasto()" style="background: orange;">Añadir gasto</button>
+</div>
+
+<div class="card">
+  <h2>📊 Resumen por persona</h2>
+  <div id="resumenPersonas"></div>
+</div>
+
+<div class="card">
+  <h2>
+  📊 Estado de cuentas
+  <span class="fecha-listado" id="fechaListado"></span>
+</h2>
+
+  <div id="quienDebe"></div>
+</div>
+
+<div class="card">
+  <h2>📊 Aportado vs Gastado</h2>
+  <canvas id="graficoPersonas"></canvas>
+</div>
+
+<div class="card">
+  <h2>📊 Gasto por sitio</h2>
+  <canvas id="graficoSitios"></canvas>
+</div>
+<div class="card">
+  <button onclick="generarPDF()" style="background: darkviolet;" >📄 Descargar PDF PRO</button>
+</div>
+<div class="card">
+  <button onclick="generarPDFResumen()" style="background: violet;">📊 Resumen</button>
+</div>
+<div class="card editable hidden">
+  <button onclick="exportarBackup()" style="background: blue;">💾 Copia de seguridad</button>
+</div>
+
+<div class="card editable hidden">
+  <input type="file" id="archivoBackup" accept=".json">
+  <button onclick="importarBackup()" style="background: dodgerblue;">♻️ Restaurar copia</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } 
+  from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+const soloLectura = new URLSearchParams(location.search).has("readonly");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAYcmpr1_Ihq9tJK6WKSK-y6rgSuy9jCqA",
+  authDomain: "gastos-de-grupo.firebaseapp.com",
+  projectId: "gastos-de-grupo",
+  storageBucket: "gastos-de-grupo.firebasestorage.app",
+  messagingSenderId: "1047751444208",
+  appId: "1:1047751444208:web:c90a49d3c574dfbaaf6435"
+};
+
+// 🔥 Firebase (UNA SOLA VEZ)
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const docRef = doc(db, "gastos", "grupo");
+
+// 🔐 Auth anónima
+signInAnonymously(auth).catch(console.error);
+
+// ✅ Esperar a auth
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    console.log("Auth OK", user.uid);
+    await cargar();   // ⬅️ esperar a Firestore
+    render();         // ⬅️ ahora sí hay datos
+  }
+});
+
+
+// ---- estado ----
+let personas = [];
+let gastos = [];
+let aportaciones = [];
+let pinGuardado = null;
+let edicionActiva = false;
+let chartPersonas, chartSitios;
+window.exportarBackup = () => {
+ const backup = {
+  fecha: new Date().toISOString(),
+  personas,
+  gastos,
+  aportaciones
+};
+
+  const blob = new Blob(
+    [JSON.stringify(backup, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "backup_gastos_grupo.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  };
+  window.importarBackup = async () => {
+  const input = document.getElementById("archivoBackup");
+  if (!input.files.length) {
+    alert("Selecciona un archivo");
+    return;
+  }
+
+  const file = input.files[0];
+  const texto = await file.text();
+  const data = JSON.parse(texto);
+
+  if (!data.personas || !data.gastos) {
+    alert("Archivo no válido");
+    return;
+  }
+
+  if (!confirm("Esto reemplazará los datos actuales. ¿Continuar?")) return;
+
+  aportaciones = data.aportaciones || [];
+  personas = data.personas;
+  gastos = data.gastos;
+
+  await guardar();
+  render();
+};  
+
+async function cargar(){
+  const snap = await getDoc(docRef);
+  if(snap.exists()){
+    const d = snap.data();
+	aportaciones = d.aportaciones || [];
+    personas = d.personas || [];
+    gastos = d.gastos || [];
+    pinGuardado = d.pin || null;
+	    console.log("Datos cargados:", personas, gastos);
+  } else {
+    console.log("Documento NO existe");
+  }
+}
+async function guardar(){
+  if (!edicionActiva || soloLectura) return;
+
+  try {
+    await setDoc(docRef, {
+      personas,
+      gastos,
+      aportaciones,
+      pin: pinGuardado
+    });
+    console.log("✅ Guardado en Firestore");
+  } catch (e) {
+    console.error("❌ Error al guardar:", e);
+  }
+}
+
+
+window.pedirPin = async ()=>{
+  if(!pinGuardado){
+    const nuevo = prompt("Crea un PIN para editar");
+    if(!nuevo) return;
+    pinGuardado = nuevo;
+    edicionActiva = true;
+    await guardar();
+    activarEdicion();
+    return;
+  }
+
+  const intento = prompt("Introduce el PIN");
+  if(intento === pinGuardado){
+    edicionActiva = true;
+    activarEdicion();
+  } else alert("PIN incorrecto");
+};
+function activarEdicion(){
+  if (soloLectura) return;
+  pinCard.classList.add("hidden");
+  modoEdicion.classList.remove("hidden");
+  document.querySelectorAll(".editable").forEach(e=>e.classList.remove("hidden"));
+}
+
+
+
+window.agregarPersona = async ()=>{
+  personas.push({id:Date.now(),nombre:nombrePersona.value,aportado:+aportePersona.value});
+  nombrePersona.value=aportePersona.value="";
+  await guardar(); render();
+};
+
+window.añadirEfectivo = async () => {
+  const p = personas.find(p => p.id == personaEfectivo.value);
+  const amount = +efectivoExtra.value;
+  const date = cashDate.value;
+
+  if (!p || !amount || !date) {
+    alert("Faltan datos");
+    return;
+  }
+
+  // sumar al total de la persona
+  p.aportado += amount;
+
+  // guardar histórico
+  aportaciones.push({
+    personaId: p.id,
+    nombre: p.nombre,
+    amount,
+    date
+  });
+
+  efectivoExtra.value = "";
+  cashDate.value = new Date().toISOString().split("T")[0];
+
+  await guardar();
+  render();
+};
+
+window.agregarGasto = async () => {
+  const part = [...checkboxPersonas.querySelectorAll("input:checked")]
+    .map(c => +c.value);
+
+  const fecha = fechaGasto.value
+    ? new Date(fechaGasto.value).toLocaleDateString()
+    : new Date().toLocaleDateString();
+
+  gastos.push({
+    id: Date.now(),
+    sitio: sitio.value,
+    descripcion: descripcionGasto.value,
+    monto: +montoGasto.value,
+    participantes: part,
+    fecha
+  });
+
+  descripcionGasto.value = "cafes";
+  montoGasto.value = "";
+  fechaGasto.value = "";
+
+  await guardar();
+  render();
+};
+
+
+window.compartirSoloLectura = () => {
+  const url = location.origin + location.pathname + "?readonly";
+  if (navigator.share) {
+    navigator.share({ title: "Gastos del grupo", url });
+  } else {
+    navigator.clipboard.writeText(url);
+    alert("Enlace copiado al portapapeles");
+  }
+};
+function render(){
+  checkboxPersonas.innerHTML=personaEfectivo.innerHTML="";
+  personas.forEach(p=>{
+    checkboxPersonas.innerHTML+=`<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label><br>`;
+    personaEfectivo.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`;
+  });
+
+  const gastoPersona={};
+  personas.forEach(p=>gastoPersona[p.id]=0);
+  gastos.forEach(g=>g.participantes.forEach(id=>gastoPersona[id]+=g.monto/g.participantes.length));
+  
+resumenPersonas.innerHTML = personas.map(p => {
+  // gastos por sitio de esta persona
+  const porSitio = {};
+
+  gastos.forEach(g => {
+    if (g.participantes.includes(p.id)) {
+      const parte = g.monto / g.participantes.length;
+      porSitio[g.sitio] = (porSitio[g.sitio] || 0) + parte;
+    }
+  });
+
+  const textoSitios = Object.keys(porSitio).length
+    ? Object.entries(porSitio)
+        .map(([s,m]) => `${s} (${m.toFixed(2)} €)`)
+        .join(", ")
+    : "—";
+
+  return `
+    <strong>${p.nombre}</strong><br>
+    Aportado: ${p.aportado.toFixed(2)} €<br>
+    Gastado: ${gastoPersona[p.id].toFixed(2)} €<br>
+    <em>Gastos en:</em> ${textoSitios}<br><br>
+  `;
+}).join("");
+
+  
+
+  quienDebe.innerHTML=personas.map(p=>{
+    var bal=p.aportado-gastoPersona[p.id];
+	if (bal >-0.01 && bal <0.01) bal = 0;
+    return bal<-0.01?`🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`
+         : bal>0.01?`🟢 ${p.nombre} dispone de :  ${bal.toFixed(2)} €`
+         : `⚪ ${p.nombre} equilibrado ${bal.toFixed(2)} €`;
+  }).join("<br>");
+
+  const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
+  totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
+  totalRestante.style.color=total<0?"#e53935":"#2e7d32";
+  totalRestante.style.fontWeight = "bold";
+  totalRestante.style.textDecoration = "underline";
+  totalRestante.style.textAlign = "center";
+  totalRestante.style.fontSize = "20px";
+
+  if(chartPersonas) chartPersonas.destroy();
+  chartPersonas=new Chart(graficoPersonas,{
+    type:"bar",
+    data:{
+      labels:personas.map(p=>p.nombre),
+      datasets:[
+        {label:"Aportado",data:personas.map(p=>p.aportado),backgroundColor:"#4CAF50"},
+        {label:"Gastado",data:personas.map(p=>gastoPersona[p.id]),backgroundColor:"#e53935"}
+      ]
+    },
+    options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
+  });
+
+  const sitios={Flap:0,Colono:0,Lydo:0};
+  gastos.forEach(g=>sitios[g.sitio]+=g.monto);
+  if(chartSitios) chartSitios.destroy();
+  chartSitios=new Chart(graficoSitios,{
+    type:"doughnut",
+    data:{labels:Object.keys(sitios),datasets:[{data:Object.values(sitios),backgroundColor:["#4CAF50","#2196F3","#FF9800"]}]},
+    options:{plugins:{legend:{position:"bottom"}}}
+  });
+}
+window.generarPDF = () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y = 15;
+
+  // === TEXTO INICIAL ===
+  pdf.setFontSize(20);
+  pdf.text("Gastos del grupo", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  pdf.text("Fecha: " + new Date().toLocaleDateString(), 10, y);
+  y += 10;
+
+  pdf.setFontSize(14);
+ const totalTexto = totalRestante.innerText
+  .replace("€", " EUR")
+  .replace("💰", "")
+   pdf.text(totalTexto, 10, y);
+  y += 12;
+
+  // === TABLA PERSONAS ===
+  pdf.setFontSize(14);
+  pdf.text("Resumen por persona", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  pdf.text("Nombre", 10, y);
+  pdf.text("Aportó", 70, y);
+  pdf.text("Gastó", 105, y);
+  pdf.text("Balance", 145, y);
+  y += 6;
+
+  pdf.line(10, y, 200, y);
+  y += 4;
+
+  personas.forEach(p => {
+    const gasto = gastos.reduce(
+      (s, g) =>
+        g.participantes.includes(p.id)
+          ? s + g.monto / g.participantes.length
+          : s,
+      0
+    );
+    const bal = p.aportado - gasto;
+
+    pdf.text(p.nombre, 10, y);
+    pdf.text(p.aportado.toFixed(2) + " €", 70, y, { align: "right" });
+    pdf.text(gasto.toFixed(2) + " €", 105, y, { align: "right" });
+    pdf.text(bal.toFixed(2) + " €", 145, y, { align: "right" });
+
+    y += 6;
+    if (y > 260) {
+      pdf.addPage();
+      y = 20;
+    }
+  });
+
+  // === QUIÉN DEBE ===
+  y += 6;
+  pdf.setFontSize(14);
+  pdf.text("Quién debe y cuánto", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  personas.forEach(p => {
+    const gasto = gastos.reduce(
+      (s, g) =>
+        g.participantes.includes(p.id)
+          ? s + g.monto / g.participantes.length
+          : s,
+      0
+    );
+    const bal = p.aportado - gasto;
+
+    if (bal < 0) {
+      pdf.text(`- ${p.nombre} debe ${(-bal).toFixed(2)} €`, 10, y);
+      y += 6;
+    } else if (bal > 0) {
+      pdf.text(`- ${p.nombre} recibe ${bal.toFixed(2)} €`, 10, y);
+      y += 6;
+    }
+  });
+
+  // === NUEVA PÁGINA PARA GRÁFICOS ===
+  pdf.addPage();
+  y = 15;
+
+  pdf.setFontSize(16);
+  pdf.text("Gráficos", 10, y);
+  y += 10;
+
+  // === GRÁFICO PERSONAS ===
+  const canvasPersonas = document.getElementById("graficoPersonas");
+  const imgPersonas = canvasPersonas.toDataURL("image/png", 1.0);
+  pdf.text("Aportado vs Gastado", 10, y);
+  y += 4;
+  pdf.addImage(imgPersonas, "PNG", 10, y, 180, 80);
+  y += 90;
+
+  // === GRÁFICO SITIOS ===
+  const canvasSitios = document.getElementById("graficoSitios");
+  const imgSitios = canvasSitios.toDataURL("image/png", 1.0);
+  pdf.text("Gasto por sitio", 10, y);
+  y += 4;
+  pdf.addImage(imgSitios, "PNG", 40, y, 120, 120);
+
+  pdf.save("gastos_grupo.pdf");
+};
+function formatDate(dateStr) {
+  if (!dateStr) return "-";
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+window.generarPDFResumen = () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  let y = 15;
+
+  const totalAportado = personas.reduce((s, p) => s + p.aportado, 0);
+  const totalGastado = gastos.reduce((s, g) => s + g.monto, 0);
+  const saldoGrupo = totalAportado - totalGastado;
+
+  /* ===== TÍTULO ===== */
+  pdf.setFontSize(20);
+  pdf.text("Resumen de gastos del grupo", 105, y, { align: "center" });
+  y += 6;
+
+  pdf.setFontSize(10);
+  pdf.text("Generado el " + new Date().toLocaleDateString(), 105, y, { align: "center" });
+  y += 10;
+
+  /* ===== RESUMEN GENERAL ===== */
+  pdf.setTextColor(30, 136, 229); // azul
+  pdf.setFontSize(14);
+  pdf.text("Resumen general", 10, y);
+  y += 6;
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(11);
+  pdf.text(`Total aportado: ${totalAportado.toFixed(2)} €`, 14, y); y += 5;
+  pdf.text(`Total gastado: ${totalGastado.toFixed(2)} €`, 14, y); y += 5;
+  pdf.text(`Saldo del grupo: ${saldoGrupo.toFixed(2)} €`, 14, y);
+  y += 8;
+
+  /* ===== PERSONAS ===== */
+  pdf.setTextColor(67, 160, 71); // verde
+  pdf.setFontSize(14);
+  pdf.text("Personas", 10, y);
+  y += 6;
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(10);
+  pdf.text("Nombre", 10, y);
+  pdf.text("Aportó", 60, y);
+  pdf.text("Gastó", 100, y);
+  pdf.text("Saldo", 145, y);
+  y += 4;
+  pdf.line(10, y, 200, y);
+  y += 4;
+
+  personas.forEach(p => {
+    const gastado = gastos.reduce(
+      (s, g) =>
+        g.participantes.includes(p.id)
+          ? s + g.monto / g.participantes.length
+          : s,
+      0
+    );
+    var saldo = p.aportado - gastado;
+	
+    pdf.text(p.nombre, 10, y);
+    pdf.text(p.aportado.toFixed(2) + " €", 60, y);
+    pdf.text(gastado.toFixed(2) + " €", 100, y);
+
+    if (saldo >= 0) {
+      pdf.setTextColor(67, 160, 71);
+    } else if (saldo <= -0.01) {
+      pdf.setTextColor(229, 57, 53);
+    }
+	else {
+		saldo = 0;
+		pdf.setTextColor(0, 0, 0);
+    }
+    pdf.text(saldo.toFixed(2) + " €", 145, y);
+    pdf.setTextColor(0, 0, 0);
+
+    y += 6;
+  });
+
+  y += 6;
+/* ===== APORTACIONES EN EFECTIVO ===== */
+pdf.setTextColor(30, 136, 229); // azul
+pdf.setFontSize(14);
+pdf.text("Aportaciones en efectivo", 10, y);
+y += 6;
+
+pdf.setTextColor(0, 0, 0);
+pdf.setFontSize(10);
+
+// Cabecera
+pdf.text("Persona", 10, y);
+pdf.text("Cantidad", 80, y);
+pdf.text("Fecha", 130, y);
+y += 4;
+pdf.line(10, y, 200, y);
+y += 4;
+
+// Aquí asumimos que tienes un array `cash` o similar
+aportaciones.forEach(a => {
+  pdf.text(a.nombre, 10, y);
+  pdf.text(a.amount.toFixed(2) + " €", 80, y);
+  pdf.text(formatDate(a.date), 130, y);
+  y += 6;
+});
+
+y += 6;
+
+  /* ===== SITIOS ===== */
+  pdf.setTextColor(255, 143, 0); // naranja
+  pdf.setFontSize(14);
+  pdf.text("Gasto por sitio", 10, y);
+  y += 6;
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(11);
+
+  const porSitio = {};
+  gastos.forEach(g => {
+    porSitio[g.sitio] = (porSitio[g.sitio] || 0) + g.monto;
+  });
+
+  Object.entries(porSitio).forEach(([sitio, monto]) => {
+    pdf.text(`${sitio}: ${monto.toFixed(2)} €`, 14, y);
+    y += 5;
+  });
+
+  pdf.save("resumen_gastos_1_pagina.pdf");
+};
+
+await cargar();
+render();
+if (soloLectura) {
+  document.getElementById("shareCard").classList.add("hidden");
+}
+document.getElementById("fechaListado").innerText =
+  "Listado actual · " + new Date().toLocaleDateString();
+  const cashDateInput = document.getElementById("cashDate");
+
+if (cashDateInput) {
+  const today = new Date().toISOString().split("T")[0];
+  cashDateInput.value = today;
+}
+
+
+  
+
+</script>
+
+</body>
+</html>
