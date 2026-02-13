@@ -81,6 +81,7 @@ button:active {
     ➕ Crear nuevo grupo
   </button>
 </div>
+<div class="card" id="cardGrupo">
 <div class="card" id="totalRestante"></div>
 <div class="card" id="shareCard">
   <button onclick="compartirSoloLectura()" style="background: orangered;">👥 Compartir vista solo lectura</button>
@@ -183,6 +184,16 @@ import { getAuth, signInAnonymously, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 const soloLectura = new URLSearchParams(location.search).has("readonly");
+if (soloLectura) {
+  const selector = document.getElementById("selectorGrupo");
+  const cardGrupo = document.getElementById("cardGrupo");
+
+  if (selector) selector.style.display = "none";
+  if (cardGrupo) {
+    const boton = cardGrupo.querySelector("button");
+    if (boton) boton.style.display = "none";
+  }
+}
 const firebaseConfig = {
   apiKey: "AIzaSyDaRSANoydVBrQUBNCGVSrr0kJzcR8ZAIo",
   authDomain: "gastos-de-grupo.firebaseapp.com",
