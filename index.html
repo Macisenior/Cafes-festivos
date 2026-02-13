@@ -182,7 +182,7 @@ import {
 
 import { getAuth, signInAnonymously, onAuthStateChanged } 
   from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
   const soloLectura = new URLSearchParams(location.search).has("readonly");
 
