@@ -182,18 +182,24 @@ import {
 
 import { getAuth, signInAnonymously, onAuthStateChanged } 
   from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+document.addEventListener("DOMContentLoaded", () => {
 
-const soloLectura = new URLSearchParams(location.search).has("readonly");
-if (soloLectura) {
-  const selector = document.getElementById("selectorGrupo");
-  const cardGrupo = document.getElementById("cardGrupo");
+    const soloLectura = new URLSearchParams(location.search).has("readonly");
 
-  if (selector) selector.style.display = "none";
-  if (cardGrupo) {
-    const boton = cardGrupo.querySelector("button");
-    if (boton) boton.style.display = "none";
-  }
-}
+    if (soloLectura) {
+
+        const selector = document.getElementById("selectorGrupo");
+        const cardGrupo = document.getElementById("cardGrupo");
+
+        if (selector) selector.style.display = "none";
+
+        if (cardGrupo) {
+            const boton = cardGrupo.querySelector("button");
+            if (boton) boton.style.display = "none";
+        }
+    }
+
+});
 const firebaseConfig = {
   apiKey: "AIzaSyDaRSANoydVBrQUBNCGVSrr0kJzcR8ZAIo",
   authDomain: "gastos-de-grupo.firebaseapp.com",
