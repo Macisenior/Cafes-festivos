@@ -15,9 +15,9 @@
 body{margin:0;font-family:system-ui,sans-serif;background:var(--f);padding:12px}
 h1{text-align:center}
 h2{font-size:18px}
-.card{background:var(--t);padding:15px;margin-bottom:15px;border-radius:14px;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+
 input,select{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px solid #ccc}
-button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p);color:#fff;font-size:16px;font-weight:600}
+
 .hidden{display:none}
 @media(min-width:600px){body{max-width:480px;margin:auto}}
 .fecha-listado {
@@ -28,14 +28,14 @@ button{width:100%;padding:14px;border-radius:12px;border:none;background:var(--p
   margin-top: 2px;
 }
 
- {
+.card {
   background: #fff;
   padding: 16px;
   margin-bottom: 14px;
   border-radius: 16px;
   box-shadow: 0 6px 18px rgba(0,0,0,.08);
 }
- {
+button {
   width: 100%;
   padding: 14px;
   border-radius: 12px;
@@ -66,7 +66,26 @@ button:active {
 .saldo-cero {
   color: #555;
 }
+#selectorGrupo {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  font-weight: 500;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
 
+#selectorGrupo:hover {
+  border-color: #0f766e;
+}
+
+#selectorGrupo:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+}
 </style>
 </head>
 
@@ -223,6 +242,7 @@ async function cargarListaGrupos() {
 
   selector.innerHTML = "";
 snap.forEach(docSnap => {
+
   const option = document.createElement("option");
   const data = docSnap.data();
 
