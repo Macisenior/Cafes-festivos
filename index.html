@@ -1040,7 +1040,10 @@ if (cashDateInput) {
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
+  navigator.serviceWorker.register("/Cafes-festivos/service-worker.js", {
+  scope: "/Cafes-festivos/"
+})
+
     .then(() => console.log("Service Worker registrado"))
     .catch(err => console.log("Error SW:", err));
 }
