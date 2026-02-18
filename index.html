@@ -307,7 +307,7 @@ if (!edicionActiva) {
   gastos: [],
   aportaciones: [],
   pin: null
-
+});
   grupoActivo = nombre;
   localStorage.setItem("grupoActivo", nombre);
 
@@ -361,7 +361,7 @@ document.addEventListener("change", async (e) => {
     await cargar();
     render();
   }
-
+});
 
 // 🔐 Auth anónima
 signInAnonymously(auth).catch(console.error);
@@ -577,9 +577,6 @@ window.añadirEfectivo = async () => {
   await guardar();
   render();
 };
-window.crearGrupo = async () => {
-  const nombre = prompt("Nombre del nuevo grupo:");
-  if (!nombre) return;
 
  await setDoc(doc(db, "grupos", nombre), {
   nombreVisible: "☕ " + nombre,
