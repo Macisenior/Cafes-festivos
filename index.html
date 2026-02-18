@@ -258,7 +258,6 @@ function getDocRef() {
   return doc(db, "grupos", grupoActivo);
 }
 
-// 📂 Cargar lista de grupos
 async function cargarListaGrupos() {
   const snap = await getDocs(collection(db, "grupos"));
   const selector = document.getElementById("selectorGrupo");
@@ -266,28 +265,28 @@ async function cargarListaGrupos() {
   if (!selector) return;
 
   selector.innerHTML = "";
-snap.forEach(docSnap => {
 
-  const option = document.createElement("option");
-  const data = docSnap.data();
+  snap.forEach(docSnap => {
+    const option = document.createElement("option");
+    const data = docSnap.data();
 
-  option.value = docSnap.id;
-  option.textContent = `${data.emoji || "📁"} ${data.nombreVisible || docSnap.id}`;
+    option.value = docSnap.id;
+    option.textContent = `${data.emoji || "📁"} ${data.nombreVisible || docSnap.id}`;
 
-  selector.appendChild(option);
+    selector.appendChild(option);
+  });
 
-}); 
- // Si no hay grupos aún, añadir general
-if (selector.options.length === 0) {
-  const option = document.createElement("option");
-  option.value = "general";
-  option.textContent = "☕ Grupo Cafés";
-  selector.appendChild(option);
+  // 👇 ESTO VA DENTRO DE LA FUNCIÓN, pero FUERA del forEach
+  if (selector.options.length === 0) {
+    const option = document.createElement("option");
+    option.value = "general";
+    option.textContent = "☕ Grupo Cafés";
+    selector.appendChild(option);
+  }
+
+  selector.value = grupoActivo;
 }
 
-selector.value = grupoActivo;
-
-}
 
 // ➕ Crear nuevo grupo
 window.crearGrupo = async () => {
