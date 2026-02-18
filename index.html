@@ -266,6 +266,7 @@ selector.value = grupoActivo;
 
 // ➕ Crear nuevo grupo
 window.crearGrupo = async () => {
+console.log("Estado edicionActiva:", edicionActiva);
 if (!edicionActiva) {
     alert("Debes desbloquear la edición con el PIN");
     return;
