@@ -721,7 +721,7 @@ window.generarPDF = () => {
   pdf.setFontSize(14);
  const totalTexto = totalRestante.innerText
   .replace("€", " EUR")
-  .replace("💰", "")
+  .replace("💰", "");
    pdf.text(totalTexto, 10, y);
   y += 12;
 
