@@ -578,20 +578,6 @@ window.añadirEfectivo = async () => {
   render();
 };
 
- await setDoc(doc(db, "grupos", nombre), {
-  nombreVisible: "☕ " + nombre,
-  personas: [],
-  gastos: [],
-  aportaciones: [],
-  pin: null
-});
-  grupoActivo = nombre;
-  localStorage.setItem("grupoActivo", nombre);
-
-  await cargarListaGrupos();
-  await cargar();
-  render();
-};
 
 window.agregarGasto = async () => {
   const part = [...checkboxPersonas.querySelectorAll("input:checked")]
