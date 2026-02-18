@@ -233,6 +233,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+// ---- estado ----
+let personas = [];
+let gastos = [];
+let aportaciones = [];
+let pinGuardado = null;
+let edicionActiva = false;
+let chartPersonas, chartSitios;
+let importandoBackup = false;
+window.exportarBackup = () => {
+ const backup = {
+  fecha: new Date().toISOString(),
+  personas,
+  gastos,
+  aportaciones
+};
 
 // 📂 Grupo activo
 let grupoActivo = localStorage.getItem("grupoActivo") || "general";
@@ -362,21 +377,6 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
-// ---- estado ----
-let personas = [];
-let gastos = [];
-let aportaciones = [];
-let pinGuardado = null;
-let edicionActiva = false;
-let chartPersonas, chartSitios;
-let importandoBackup = false;
-window.exportarBackup = () => {
- const backup = {
-  fecha: new Date().toISOString(),
-  personas,
-  gastos,
-  aportaciones
-};
 
   const blob = new Blob(
     [JSON.stringify(backup, null, 2)],
