@@ -526,9 +526,10 @@ window.pedirPin = async ()=>{
 
   const intento = prompt("Introduce el PIN");
  if(String(intento) === String(pinGuardado)){
-    edicionActiva = true;
-    activarEdicion();
-  } else alert("PIN incorrecto");
+  edicionActiva = true;
+  activarEdicion();
+  render(); // 👈 ESTA LÍNEA FALTA
+}
 };
 function activarEdicion(){
   if (soloLectura) return;
@@ -551,9 +552,31 @@ window.agregarPersona = async ()=>{
   nombrePersona.value=aportePersona.value="";
   await guardar(); render();
 };
-window.eliminarPersona = (id) => {
-  alert("Botón borrar funcionando para ID: " + id);
+window.eliminarPersona = async (id) => {
+
+  if (!edicionActiva) return;
+
+  const persona = personas.find(p => p.id === id);
+  if (!persona) return;
+
+  const seguro = confirm(`¿Eliminar a ${persona.nombre}?`);
+  if (!seguro) return;
+
+  // 1️⃣ Eliminar persona
+  personas = personas.filter(p => p.id !== id);
+
+  // 2️⃣ Quitarla de los gastos
+  gastos.forEach(g => {
+    g.participantes = g.participantes.filter(pid => pid !== id);
+  });
+
+  // 3️⃣ Eliminar sus aportaciones
+  aportaciones = aportaciones.filter(a => a.personaId !== id);
+
+  await guardar();
+  render();
 };
+
 
 window.añadirEfectivo = async () => {
   const p = personas.find(p => p.id == personaEfectivo.value);
@@ -621,10 +644,11 @@ window.compartirSoloLectura = () => {
 };
 function render(){
   checkboxPersonas.innerHTML=personaEfectivo.innerHTML="";
- personas.forEach(p => {
+personas.forEach(p => {
 
   checkboxPersonas.innerHTML += `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      
       <label>
         <input type="checkbox" value="${p.id}"> ${p.nombre}
       </label>
@@ -632,16 +656,11 @@ function render(){
       ${edicionActiva ? `
         <button 
           onclick="eliminarPersona(${p.id})"
-          style="
-            background:#e53935;
-            width:auto;
-            padding:6px 10px;
-            font-size:12px;
-            border-radius:8px;
-          ">
+          style="background:#e53935; width:auto; padding:6px 10px; font-size:12px; border-radius:8px;">
           🗑
         </button>
       ` : ""}
+
     </div>
   `;
 
@@ -649,6 +668,7 @@ function render(){
     <option value="${p.id}">${p.nombre}</option>
   `;
 });
+
 
 
   const gastoPersona={};
