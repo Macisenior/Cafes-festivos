@@ -551,6 +551,9 @@ window.agregarPersona = async ()=>{
   nombrePersona.value=aportePersona.value="";
   await guardar(); render();
 };
+window.eliminarPersona = (id) => {
+  alert("Botón borrar funcionando para ID: " + id);
+};
 
 window.añadirEfectivo = async () => {
   const p = personas.find(p => p.id == personaEfectivo.value);
@@ -618,10 +621,35 @@ window.compartirSoloLectura = () => {
 };
 function render(){
   checkboxPersonas.innerHTML=personaEfectivo.innerHTML="";
-  personas.forEach(p=>{
-    checkboxPersonas.innerHTML+=`<label><input type="checkbox" value="${p.id}"> ${p.nombre}</label><br>`;
-    personaEfectivo.innerHTML+=`<option value="${p.id}">${p.nombre}</option>`;
-  });
+ personas.forEach(p => {
+
+  checkboxPersonas.innerHTML += `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <label>
+        <input type="checkbox" value="${p.id}"> ${p.nombre}
+      </label>
+
+      ${edicionActiva ? `
+        <button 
+          onclick="eliminarPersona(${p.id})"
+          style="
+            background:#e53935;
+            width:auto;
+            padding:6px 10px;
+            font-size:12px;
+            border-radius:8px;
+          ">
+          🗑
+        </button>
+      ` : ""}
+    </div>
+  `;
+
+  personaEfectivo.innerHTML += `
+    <option value="${p.id}">${p.nombre}</option>
+  `;
+});
+
 
   const gastoPersona={};
   personas.forEach(p=>gastoPersona[p.id]=0);
