@@ -188,6 +188,12 @@ button:active {
   <input type="file" id="archivoBackup" accept=".json">
   <button onclick="importarBackup()" style="background: dodgerblue;">♻️ Restaurar copia</button>
 </div>
+<div class="card hidden" id="dangerZone">
+  <h3 style="color:red;">⚠ Zona peligrosa</h3>
+  <button onclick="borrarGrupo()" style="background: darkred;">
+    🗑 Borrar grupo actual
+  </button>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -287,6 +293,32 @@ if (!edicionActiva) {
 });
   grupoActivo = nombre;
   localStorage.setItem("grupoActivo", nombre);
+
+  await cargarListaGrupos();
+  await cargar();
+  render();
+};
+import { deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+window.borrarGrupo = async () => {
+
+  if (!edicionActiva) return;
+
+  if (grupoActivo === "general") {
+    alert("No se puede borrar el grupo general.");
+    return;
+  }
+
+  const seguro = confirm(
+    "⚠ Esta acción eliminará el grupo completo.\n\n¿Seguro que quieres continuar?"
+  );
+
+  if (!seguro) return;
+
+  await deleteDoc(doc(db, "grupos", grupoActivo));
+
+  grupoActivo = "general";
+  localStorage.setItem("grupoActivo", "general");
 
   await cargarListaGrupos();
   await cargar();
@@ -438,6 +470,8 @@ async function cargar(){
 edicionActiva = false; // 🔐 FORZAR bloqueo al cargar
 const btnCrearGrupo = document.getElementById("btnCrearGrupo");
 if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
+const dangerZone = document.getElementById("dangerZone");
+if (dangerZone) dangerZone.classList.add("hidden");
 }
 async function guardar() {
   if (!edicionActiva || soloLectura) return;
@@ -499,7 +533,11 @@ function activarEdicion(){
   document.querySelectorAll(".editable").forEach(e=>e.classList.remove("hidden"));
   const btnCrearGrupo = document.getElementById("btnCrearGrupo");
 if (btnCrearGrupo) btnCrearGrupo.style.display = "block";
+const dangerZone = document.getElementById("dangerZone");
 
+if (grupoActivo !== "general") {
+  dangerZone.classList.remove("hidden");
+}
 }
 
 
