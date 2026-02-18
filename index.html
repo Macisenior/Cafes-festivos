@@ -242,12 +242,26 @@ let edicionActiva = false;
 let chartPersonas, chartSitios;
 let importandoBackup = false;
 window.exportarBackup = () => {
- const backup = {
-  fecha: new Date().toISOString(),
-  personas,
-  gastos,
-  aportaciones
+  const backup = {
+    fecha: new Date().toISOString(),
+    personas,
+    gastos,
+    aportaciones
+  };
+
+  const blob = new Blob(
+    [JSON.stringify(backup, null, 2)],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "backup_gastos_grupo.json";
+  a.click();
+  URL.revokeObjectURL(url);
 };
+
 
 // 📂 Grupo activo
 let grupoActivo = localStorage.getItem("grupoActivo") || "general";
