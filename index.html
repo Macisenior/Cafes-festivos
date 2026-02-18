@@ -203,7 +203,8 @@ import {
   getDoc, 
   setDoc, 
   getDocs, 
-  collection 
+  collection,
+  deleteDoc
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 import { getAuth, signInAnonymously, onAuthStateChanged } 
@@ -298,7 +299,7 @@ if (!edicionActiva) {
   await cargar();
   render();
 };
-import { deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
 
 window.borrarGrupo = async () => {
 
