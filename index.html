@@ -1060,19 +1060,6 @@ y += 10;
   pdf.save("resumen_gastos_1_pagina.pdf");
 };
 
-await cargar();
-render();
-if (soloLectura) {
-  document.getElementById("shareCard").classList.add("hidden");
-}
-document.getElementById("fechaListado").innerText =
-  "Listado actual · " + new Date().toLocaleDateString();
-  const cashDateInput = document.getElementById("cashDate");
-
-if (cashDateInput) {
-  const today = new Date().toISOString().split("T")[0];
-  cashDateInput.value = today;
-}
 
 
 
