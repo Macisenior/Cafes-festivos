@@ -432,6 +432,7 @@ async function cargar(){
   } else {
     console.log("Documento NO existe");
   }
+edicionActiva = false; // 🔐 FORZAR bloqueo al cargar
 }
 async function guardar() {
   if (!edicionActiva || soloLectura) return;
