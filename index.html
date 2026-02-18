@@ -266,6 +266,10 @@ selector.value = grupoActivo;
 
 // ➕ Crear nuevo grupo
 window.crearGrupo = async () => {
+if (!edicionActiva) {
+    alert("Debes desbloquear la edición con el PIN");
+    return;
+  }
   const nombre = prompt("Nombre del nuevo grupo:");
   if (!nombre) return;
 
@@ -289,6 +293,11 @@ window.crearGrupo = async () => {
 // 🔄 Cambio de grupo desde selector
 document.addEventListener("change", async (e) => {
   if (e.target.id === "selectorGrupo") {
+  if (!edicionActiva) {
+      alert("Debes desbloquear la edición con el PIN");
+      e.target.value = grupoActivo; // vuelve al grupo anterior
+      return;
+    }
     grupoActivo = e.target.value;
     localStorage.setItem("grupoActivo", grupoActivo);
 
