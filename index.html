@@ -403,7 +403,7 @@ onAuthStateChanged(auth, async (user) => {
   a.download = "backup_gastos_grupo.json";
   a.click();
   URL.revokeObjectURL(url);
-  };
+
    window.importarBackup = async () => {
   const input = document.getElementById("archivoBackup");
   if (!input.files.length) {
