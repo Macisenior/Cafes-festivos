@@ -119,6 +119,7 @@ button:active {
 <h2>👤 Añadir persona</h2>
 <input id="nombrePersona" placeholder="Nombre">
 <input id="aportePersona" type="number" placeholder="Aportó €">
+<input id="telefonoPersona" placeholder="Teléfono (sin + ni espacios)">
 <button onclick="agregarPersona()">Añadir</button>
 </div>
 
@@ -150,7 +151,10 @@ button:active {
 <div id="checkboxPersonas"></div>
 <button onclick="agregarGasto()" style="background: orange;">Añadir gasto</button>
 </div>
-
+<div class="card">
+  <h2>🧾 Lista de gastos</h2>
+  <div id="listaGastos"></div>
+</div>
 <div class="card">
   <h2>📊 Resumen por persona</h2>
   <div id="resumenPersonas"></div>
@@ -241,7 +245,7 @@ let pinGuardado = null;
 let edicionActiva = false;
 let chartPersonas, chartSitios;
 let importandoBackup = false;
-
+let gastoEditando = null;
 
 
 // 📂 Grupo activo
@@ -345,6 +349,8 @@ document.addEventListener("change", async (e) => {
     }
     grupoActivo = e.target.value;
     localStorage.setItem("grupoActivo", grupoActivo);
+	
+    edicionActiva = false;
 
     personas = [];
     gastos = [];
@@ -544,13 +550,71 @@ if (grupoActivo !== "general") {
   dangerZone.classList.remove("hidden");
 }
 }
+window.eliminarGasto = async (id) => {
 
+  if (!edicionActiva) return;
 
+  const gasto = gastos.find(g => String(g.id) === String(id));
+  if (!gasto) return;
 
-window.agregarPersona = async ()=>{
-  personas.push({id:Date.now(),nombre:nombrePersona.value,aportado:+aportePersona.value});
-  nombrePersona.value=aportePersona.value="";
-  await guardar(); render();
+  const seguro = confirm(
+    `¿Eliminar "${gasto.descripcion}" (${gasto.monto.toFixed(2)} €)?`
+  );
+
+  if (!seguro) return;
+
+  gastos = gastos.filter(g => String(g.id) !== String(id));
+
+  // 🔥 Guardado directo en Firestore
+  await setDoc(getDocRef(), {
+    personas,
+    gastos,
+    aportaciones,
+    pin: pinGuardado || null
+  });
+
+  render();
+};
+window.editarGasto = (id) => {
+
+  const gasto = gastos.find(g => g.id === id);
+  if (!gasto) return;
+
+  gastoEditando = id;
+
+  sitio.value = gasto.sitio;
+  descripcionGasto.value = gasto.descripcion;
+  montoGasto.value = gasto.monto;
+
+  // marcar participantes
+  [...checkboxPersonas.querySelectorAll("input")]
+    .forEach(c => {
+      c.checked = gasto.participantes.includes(+c.value);
+    });
+
+  // cambiar texto botón
+  const btn = document.querySelector("#botonAgregarGasto");
+  if (btn) btn.textContent = "Actualizar gasto";
+
+  // opcional: scroll automático
+  document.getElementById("descripcionGasto").scrollIntoView({ behavior: "smooth" });
+};
+
+window.agregarPersona = async () => {
+
+  personas.push({
+    id: Date.now(),
+    nombre: nombrePersona.value,
+    aportado: +aportePersona.value,
+    telefono: telefonoPersona.value.trim()  // 👈 nuevo campo
+  });
+
+  nombrePersona.value = "";
+  aportePersona.value = "";
+  telefonoPersona.value = "";
+
+  await guardar();
+  render();
 };
 window.eliminarPersona = async (id) => {
 
@@ -615,6 +679,27 @@ window.agregarGasto = async () => {
     ? new Date(fechaGasto.value).toLocaleDateString()
     : new Date().toLocaleDateString();
 
+ if (gastoEditando) {
+
+  gastos = gastos.map(g =>
+    g.id === gastoEditando
+      ? {
+          ...g,
+          sitio: sitio.value,
+          descripcion: descripcionGasto.value,
+          monto: +montoGasto.value,
+          participantes: part
+        }
+      : g
+  );
+
+  gastoEditando = null;
+
+  const btn = document.querySelector("#botonAgregarGasto");
+  if (btn) btn.textContent = "Añadir gasto";
+
+} else {
+
   gastos.push({
     id: Date.now(),
     sitio: sitio.value,
@@ -624,6 +709,7 @@ window.agregarGasto = async () => {
     fecha
   });
 
+} 
   descripcionGasto.value = "cafes";
   montoGasto.value = "";
   fechaGasto.value = "";
@@ -704,16 +790,59 @@ resumenPersonas.innerHTML = personas.map(p => {
     <em>Gastos en:</em> ${textoSitios}<br><br>
   `;
 }).join("");
+listaGastos.innerHTML = gastos.map(g => `
+  <div style="margin-bottom:8px; padding:6px; border-bottom:1px solid #ddd;">
+    <strong>${g.descripcion}</strong> - ${g.monto.toFixed(2)} €
+    (${g.fecha})<br>
+    👥 ${g.participantes.map(id => {
+      const persona = personas.find(p => p.id === id);
+      return persona ? persona.nombre : "";
+    }).join(", ")}
 
-  
+    ${edicionActiva ? `
+      <button onclick="eliminarGasto(${g.id})"
+        style="margin-left:10px; background:#e53935; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;">
+        ❌
+      </button>
+    ` : ""}
+  </div>
+`).join("");
 
-  quienDebe.innerHTML=personas.map(p=>{
-    var bal=p.aportado-gastoPersona[p.id];
-	if (bal >-0.01 && bal <0.01) bal = 0;
-    return bal<-0.01?`🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`
-         : bal>0.01?`🟢 ${p.nombre} dispone de :  ${bal.toFixed(2)} €`
-         : `⚪ ${p.nombre} equilibrado ${bal.toFixed(2)} €`;
-  }).join("<br>");
+ quienDebe.innerHTML = personas.map(p => {
+
+  var bal = p.aportado - gastoPersona[p.id];
+  if (bal > -0.01 && bal < 0.01) bal = 0;
+
+  let texto = "";
+
+  if (bal < -0.01) {
+    texto = `🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`;
+  } else if (bal > 0.01) {
+    texto = `🟢 ${p.nombre} dispone de ${bal.toFixed(2)} €`;
+  } else {
+    texto = `⚪ ${p.nombre} equilibrado`;
+  }
+
+  // 👉 CAPRICHO WHATSAPP
+  if (bal < 0 && p.telefono) {
+
+const mensaje = encodeURIComponent(
+  `Ey ${p.nombre} 😄 Te quedan ${(-bal).toFixed(2)} € pendientes en el grupo. ¡Invita a algo antes de que te embarguemos el bocata! 🥪💸`
+);
+
+    const enlace = `https://wa.me/${p.telefono}?text=${mensaje}`;
+
+    texto += `
+      <a href="${enlace}" target="_blank"
+         style="margin-left:8px; background:#25D366; color:white; padding:3px 6px; border-radius:6px; text-decoration:none;">
+         📱 Avisar
+      </a>
+    `;
+  }
+
+  return texto;
+
+}).join("<br>");
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
   totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
