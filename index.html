@@ -91,7 +91,8 @@ button:active {
 
 
 <body>
-
+<div id="pantallaPrincipal">
+  <!-- TODO lo que ya tienes: resumen, gráficos, etc -->
 <h1>💸 Gastos del Grupo</h1>
 <div class="card" id="grupoCard">
   <h2>📂 Grupo activo</h2>
@@ -151,10 +152,7 @@ button:active {
 <div id="checkboxPersonas"></div>
 <button onclick="agregarGasto()" style="background: orange;">Añadir gasto</button>
 </div>
-<div class="card">
-  <h2>🧾 Lista de gastos</h2>
-  <div id="listaGastos"></div>
-</div>
+
 <div class="card">
   <h2>📊 Resumen por persona</h2>
   <div id="resumenPersonas"></div>
@@ -173,7 +171,10 @@ button:active {
   <h2>📊 Aportado vs Gastado</h2>
   <canvas id="graficoPersonas"></canvas>
 </div>
-
+<button onclick="abrirGestionGastos()"
+  style="background:#222; color:white; padding:10px 14px; border:none; border-radius:8px;">
+  📋 Gestionar gastos
+</button>
 <div class="card">
   <h2>📊 Gasto por sitio</h2>
   <canvas id="graficoSitios"></canvas>
@@ -198,7 +199,20 @@ button:active {
     🗑 Borrar grupo actual
   </button>
 </div>
+</div>
+</div>
+<div id="pantallaGastos" style="display:none;">
 
+  <button onclick="volverPrincipal()"
+    style="background:#444; color:white; padding:8px 12px; border:none; border-radius:6px; margin-bottom:10px;">
+    ← Volver
+  </button>
+
+  <h2>📋 Gestionar gastos</h2>
+
+  <div id="listaGastos"></div>
+
+</div>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { 
@@ -550,6 +564,24 @@ if (grupoActivo !== "general") {
   dangerZone.classList.remove("hidden");
 }
 }
+window.abrirGestionGastos = () => {
+  if (!edicionActiva) {
+    alert("Debes desbloquear la edición");
+    return;
+  }
+
+document.getElementById("pantallaPrincipal").style.display = "none";
+document.getElementById("pantallaGastos").style.display = "block";
+
+setTimeout(() => {
+  render();
+}, 50);
+};
+
+window.volverPrincipal = () => {
+  document.getElementById("pantallaPrincipal").style.display = "block";
+  document.getElementById("pantallaGastos").style.display = "none";
+};
 window.eliminarGasto = async (id) => {
 
   if (!edicionActiva) return;
@@ -718,7 +750,15 @@ window.agregarGasto = async () => {
   render();
 };
 
+window.actualizarTelefono = async (id, valor) => {
+  const persona = personas.find(p => p.id === id);
+  if (!persona) return;
 
+  persona.telefono = valor.trim();
+
+  await guardar();
+  render();
+};
 window.compartirSoloLectura = () => {
   const url = location.origin + location.pathname + "?readonly";
   if (navigator.share) {
@@ -787,26 +827,43 @@ resumenPersonas.innerHTML = personas.map(p => {
     <strong>${p.nombre}</strong><br>
     Aportado: ${p.aportado.toFixed(2)} €<br>
     Gastado: ${gastoPersona[p.id].toFixed(2)} €<br>
-    <em>Gastos en:</em> ${textoSitios}<br><br>
+    <em>Gastos en:</em> ${textoSitios}<br>
+	${edicionActiva ? `
+  <br>
+  📞 Teléfono:
+  <input
+    value="${p.telefono || ""}"
+    placeholder="346XXXXXXXX"
+    onchange="actualizarTelefono(${p.id}, this.value)"
+    style="padding:4px; border-radius:6px; border:1px solid #ccc; margin-top:4px;"
+  >
+  <br>
+` : ""}
+	<br>
   `;
 }).join("");
-listaGastos.innerHTML = gastos.map(g => `
-  <div style="margin-bottom:8px; padding:6px; border-bottom:1px solid #ddd;">
-    <strong>${g.descripcion}</strong> - ${g.monto.toFixed(2)} €
-    (${g.fecha})<br>
-    👥 ${g.participantes.map(id => {
-      const persona = personas.find(p => p.id === id);
-      return persona ? persona.nombre : "";
-    }).join(", ")}
 
-    ${edicionActiva ? `
-      <button onclick="eliminarGasto(${g.id})"
-        style="margin-left:10px; background:#e53935; color:white; border:none; padding:4px 8px; border-radius:6px; cursor:pointer;">
-        ❌
-      </button>
-    ` : ""}
-  </div>
-`).join("");
+const listaGastos = document.getElementById("listaGastos");
+
+if (listaGastos) {
+  listaGastos.innerHTML = gastos.map(g => `
+    <div style="margin-bottom:8px; padding:6px; border-bottom:1px solid #ddd;">
+      <strong>${g.descripcion}</strong> - ${g.monto.toFixed(2)} €
+      (${g.fecha})<br>
+      👥 ${g.participantes.map(id => {
+        const persona = personas.find(p => p.id === id);
+        return persona ? persona.nombre : "";
+      }).join(", ")}
+
+      ${edicionActiva ? `
+        <button onclick="eliminarGasto(${g.id})"
+          style="margin-top:6px; background:#e53935; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">
+          ❌ Eliminar
+        </button>
+      ` : ""}
+    </div>
+  `).join("");
+}
 
  quienDebe.innerHTML = personas.map(p => {
 
