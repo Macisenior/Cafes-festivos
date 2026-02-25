@@ -1,3 +1,14 @@
 git add .
 git commit -m "Reordenado estado y corregido estructura"
 git push
+
+
+
+
+
+
+
+
+git add .
+git commit -m "Fix saltos de página y cabeceras en PDF resumen"
+git push

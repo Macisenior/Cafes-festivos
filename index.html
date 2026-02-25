@@ -982,11 +982,10 @@ window.generarPDF = () => {
     pdf.text(bal.toFixed(2) + " €", 145, y, { align: "right" });
 
     y += 6;
-    if (y > 260) {
-      pdf.addPage();
-      y = 20;
-    }
-  });
+ 
+
+ 
+});
 
   // === QUIÉN DEBE ===
   y += 6;
@@ -1047,22 +1046,66 @@ function formatDate(dateStr) {
 window.generarPDFResumen = () => {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
-  let y = 15;
+let seccionActual = "";
+let colorSeccion = [0, 0, 0];
+const pageHeight = pdf.internal.pageSize.height;
+const marginTop = 20;
+const marginBottom = 20;
 
+let y = marginTop;
+let pageNumber = 1;
   const totalAportado = personas.reduce((s, p) => s + p.aportado, 0);
   const totalGastado = gastos.reduce((s, g) => s + g.monto, 0);
   const saldoGrupo = totalAportado - totalGastado;
+  function dibujarEncabezado() {
+  pdf.setFontSize(16);
+  pdf.setTextColor(0, 0, 0);
+  pdf.text("Resumen de gastos del grupo", 105, 12, { align: "center" });
 
-  /* ===== TÍTULO ===== */
-  pdf.setFontSize(20);
-  pdf.setTextColor(0,0,139); // Azul
-  pdf.text("Resumen de gastos del grupo", 105, y, { align: "center" });
-  y += 6;
+  pdf.setFontSize(9);
+  pdf.text(
+    "Generado el " + new Date().toLocaleDateString(),
+    105,
+    17,
+    { align: "center" }
+  );
 
-  pdf.setFontSize(10);
-  pdf.setTextColor(255, 152, 0); // naranja
-  pdf.text("Generado el " + new Date().toLocaleDateString(), 105,  y, { align: "center" });
-  y += 10;
+  pdf.line(10, 20, 200, 20);
+}
+
+function nuevaPagina() {
+  pdf.addPage();
+  pageNumber++;
+
+  dibujarEncabezado();
+
+  if (seccionActual) {
+    y = 32;  // 👈 posición real tras encabezado
+
+    pdf.setFontSize(15);
+    pdf.setTextColor(...colorSeccion);
+    pdf.text(seccionActual, 10, y);
+
+    y += 6;
+
+    pdf.setDrawColor(...colorSeccion);
+    pdf.line(10, y, 200, y);
+
+    y += 8; // espacio antes del contenido
+  }
+}
+
+function checkPageBreak(espacio = 8) {
+  if (y + espacio > pageHeight - marginBottom) {
+    nuevaPagina();
+    return true;   // 👈 importante
+  }
+  return false;
+}
+
+/* ===== RESUMEN GENERAL ===== */
+
+  
 
   /* ===== RESUMEN GENERAL ===== */
   pdf.setTextColor(30, 136, 229); // azul
@@ -1122,9 +1165,12 @@ window.generarPDFResumen = () => {
     y += 6;
   });
 
-  y += 6;
 /* ===== APORTACIONES EN EFECTIVO ===== */
-pdf.setTextColor(30, 136, 229); // azul
+
+seccionActual = "Aportaciones en efectivo";
+colorSeccion = [30, 136, 229];
+
+pdf.setTextColor(30, 136, 229);
 pdf.setFontSize(14);
 pdf.text("Aportaciones en efectivo", 10, y);
 y += 6;
@@ -1142,6 +1188,21 @@ y += 4;
 
 // Aquí asumimos que tienes un array `cash` o similar
 aportaciones.forEach(a => {
+
+ if (y + 8 > pageHeight - marginBottom) {
+    nuevaPagina();
+
+    // Solo redibujar cabecera de columnas
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFontSize(10);
+    pdf.text("Persona", 10, y);
+    pdf.text("Cantidad", 80, y);
+    pdf.text("Fecha", 130, y);
+    y += 4;
+    pdf.line(10, y, 200, y);
+    y += 4;
+}
+
   pdf.text(a.nombre, 10, y);
   pdf.text(a.amount.toFixed(2) + " €", 80, y);
   pdf.text(formatDate(a.date), 130, y);
@@ -1151,7 +1212,9 @@ aportaciones.forEach(a => {
 y += 6;
 // ===== GASTO POR DÍA Y SITIO (TABLA COLOREADA) =====
 
-// Colores por sitio
+seccionActual = "Gasto por día y sitio";
+colorSeccion = [33, 150, 243];
+
 const coloresSitio = {
   Lydo: [76, 175, 80],
   Colono: [33, 150, 243],
@@ -1212,12 +1275,9 @@ let fila = 0;
 listaPorDia.forEach(g => {
   const esDiaMasCaro = g.fecha === diaMasCaro.fecha;
 
-  if (y > 270) {
-    pdf.addPage();
-    y = 15;
-    pintarCabeceraTabla();
-  }
+ checkPageBreak(10);
 
+ 
   if (fila % 2 === 0) {
     pdf.setFillColor(245, 245, 245);
     pdf.rect(10, y - 4, 190, 6, "F");
@@ -1261,7 +1321,7 @@ pdf.setDrawColor(220, 220, 220); // línea suave
 pdf.line(10, y, 200, y);
 
 y += 8; // espacio después de la línea
-
+checkPageBreak(12);
   pdf.text("Total por sitio", 10, y);
   y += 6;
 
