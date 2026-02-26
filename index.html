@@ -127,6 +127,47 @@ button:active {
   font-size: 13px;
   opacity: 0.8;
 }
+.estado-badge {
+  display: inline-block;
+ background: #fff176;
+color: #5d4037;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.subtexto {
+  display: block;
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 6px;
+}
+#totalRestante {
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 20px;
+  color: #424242;
+  transition: all 0.3s ease;
+}
+
+.frase-animada {
+  opacity: 0;
+  transform: translateY(8px);
+}
+#totalRestante {
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 18px;
+  margin: 10px 0;
+ background: #f1f8f4;
+  border: 1px solid rgba(76,175,80,0.15);
+  transition: all 0.3s ease;
+}
 </style>
 </head>
 
@@ -276,6 +317,26 @@ import {
 
 import { getAuth, signInAnonymously, onAuthStateChanged } 
   from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+  // 🎭 FRASES DINÁMICAS
+
+const frasesPositivas = [
+  "🕶️ Nivel de organización: ninja.",
+  "🍺 Aquí no se pierde ni una ronda.",
+  "🎉 Grupo en modo celebración.",
+  "🧠 Control financiero absoluto.",
+  "💸 Gastar sabemos. Cuadrar también.",
+  "👑 Administración legendaria."
+];
+
+const frasesNegativas = [
+  "⚠️ Momento de invitar algo...",
+  "🍻 Se viene ronda obligatoria.",
+  "😏 Aquí hay cuentas pendientes...",
+  "💸 Alguien está mirando para otro lado...",
+  "🔥 Esto se arregla con una cerveza."
+];
+let estadoAnterior = null;
+let fraseActual = "";
 document.addEventListener("DOMContentLoaded", async () => {
  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
   if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
@@ -844,7 +905,41 @@ const mensaje = encodeURIComponent(
 }).join("<br>");
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
-  totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
+ let estadoActual;
+
+if (total < 0) {
+  estadoActual = "negativo";
+} else if (total <= 20) {
+  estadoActual = "bajo";
+} else {
+  estadoActual = "positivo";
+}
+
+if (estadoActual !== estadoAnterior) {
+  if (estadoActual === "negativo") {
+    fraseActual = frasesNegativas[Math.floor(Math.random() * frasesNegativas.length)];
+  } else if (estadoActual === "bajo") {
+    fraseActual = frasesBajo[Math.floor(Math.random() * frasesBajo.length)];
+  } else {
+    fraseActual = frasesPositivas[Math.floor(Math.random() * frasesPositivas.length)];
+  }
+
+  estadoAnterior = estadoActual;
+}
+totalRestante.classList.add("frase-animada");
+
+setTimeout(() => {
+  totalRestante.innerHTML = fraseActual;
+  if (estadoActual === "negativo") {
+  totalRestante.style.background = "rgba(229,57,53,0.08)";
+} else if (estadoActual === "bajo") {
+  totalRestante.style.background = "rgba(255,193,7,0.12)";
+} else {
+  totalRestante.style.background = "rgba(76,175,80,0.08)";
+}
+  totalRestante.classList.remove("frase-animada");
+}, 150);
+
   // 🔥 Actualizar HERO
 document.getElementById("heroBalance").textContent =
   total.toFixed(2) + " €";
@@ -865,8 +960,9 @@ if (total < 0) {
 } else {
   heroBox.style.background =
    "linear-gradient(135deg, #a5d6a7, #66bb6a)";
-  document.getElementById("heroMensaje").textContent =
-    "😎 Fondo positivo. Todo bajo control.";
+ document.getElementById("heroMensaje").innerHTML =
+  '<span class="estado-badge">😎 Fondo positivo</span>' +
+  '<span class="subtexto">Todo bajo control.</span>';
 }
   totalRestante.style.color=total<0?"#e53935":"#2e7d32";
   totalRestante.style.fontWeight = "bold";
