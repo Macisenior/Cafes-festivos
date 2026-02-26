@@ -86,6 +86,47 @@ button:active {
   border-color: #0f766e;
   box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
 }
+/* ===== HERO BALANCE ===== */
+
+.hero-balance {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #1b5e20;
+  padding: 35px;
+  border-radius: 20px;
+  text-align: center;
+  margin: 20px 0 30px 0;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  border: 2px solid #c8e6c9;
+  transition: all 0.3s ease;
+}
+
+.hero-balance h2 {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+
+.hero-balance p {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 5px 0;
+}
+#heroMensaje {
+  margin-top: 10px;
+}
+
+#heroMensaje .estado {
+  display: block;
+  font-weight: 700;
+  font-size: 16px;
+ letter-spacing: 0.5px; 
+}
+
+#heroMensaje .subtexto {
+  display: block;
+  font-size: 13px;
+  opacity: 0.8;
+}
 </style>
 </head>
 
@@ -94,6 +135,14 @@ button:active {
 <div id="pantallaPrincipal">
   <!-- TODO lo que ya tienes: resumen, gráficos, etc -->
 <h1>💸 Gastos del Grupo</h1>
+<div class="hero-balance">
+  <h2>Total restante</h2>
+  <p id="heroBalance">0 €</p>
+ <div id="heroMensaje">
+  <span class="estado">😎 Fondo positivo</span>
+  <span class="subtexto">Todo bajo control.</span>
+</div>
+</div>
 <div class="card" id="grupoCard">
   <h2>📂 Grupo activo</h2>
   <select id="selectorGrupo"></select>
@@ -564,114 +613,7 @@ if (grupoActivo !== "general") {
   dangerZone.classList.remove("hidden");
 }
 }
-window.abrirGestionGastos = () => {
-  if (!edicionActiva) {
-    alert("Debes desbloquear la edición");
-    return;
-  }
-
-document.getElementById("pantallaPrincipal").style.display = "none";
-document.getElementById("pantallaGastos").style.display = "block";
-
-setTimeout(() => {
-  render();
-}, 50);
-};
-
-window.volverPrincipal = () => {
-  document.getElementById("pantallaPrincipal").style.display = "block";
-  document.getElementById("pantallaGastos").style.display = "none";
-};
-window.eliminarGasto = async (id) => {
-
-  if (!edicionActiva) return;
-
-  const gasto = gastos.find(g => String(g.id) === String(id));
-  if (!gasto) return;
-
-  const seguro = confirm(
-    `¿Eliminar "${gasto.descripcion}" (${gasto.monto.toFixed(2)} €)?`
-  );
-
-  if (!seguro) return;
-
-  gastos = gastos.filter(g => String(g.id) !== String(id));
-
-  // 🔥 Guardado directo en Firestore
-  await setDoc(getDocRef(), {
-    personas,
-    gastos,
-    aportaciones,
-    pin: pinGuardado || null
-  });
-
-  render();
-};
-window.editarGasto = (id) => {
-
-  const gasto = gastos.find(g => g.id === id);
-  if (!gasto) return;
-
-  gastoEditando = id;
-
-  sitio.value = gasto.sitio;
-  descripcionGasto.value = gasto.descripcion;
-  montoGasto.value = gasto.monto;
-
-  // marcar participantes
-  [...checkboxPersonas.querySelectorAll("input")]
-    .forEach(c => {
-      c.checked = gasto.participantes.includes(+c.value);
-    });
-
-  // cambiar texto botón
-  const btn = document.querySelector("#botonAgregarGasto");
-  if (btn) btn.textContent = "Actualizar gasto";
-
-  // opcional: scroll automático
-  document.getElementById("descripcionGasto").scrollIntoView({ behavior: "smooth" });
-};
-
-window.agregarPersona = async () => {
-
-  personas.push({
-    id: Date.now(),
-    nombre: nombrePersona.value,
-    aportado: +aportePersona.value,
-    telefono: telefonoPersona.value.trim()  // 👈 nuevo campo
-  });
-
-  nombrePersona.value = "";
-  aportePersona.value = "";
-  telefonoPersona.value = "";
-
-  await guardar();
-  render();
-};
-window.eliminarPersona = async (id) => {
-
-  if (!edicionActiva) return;
-
-  const persona = personas.find(p => p.id === id);
-  if (!persona) return;
-
-  const seguro = confirm(`¿Eliminar a ${persona.nombre}?`);
-  if (!seguro) return;
-
-  // 1️⃣ Eliminar persona
-  personas = personas.filter(p => p.id !== id);
-
-  // 2️⃣ Quitarla de los gastos
-  gastos.forEach(g => {
-    g.participantes = g.participantes.filter(pid => pid !== id);
-  });
-
-  // 3️⃣ Eliminar sus aportaciones
-  aportaciones = aportaciones.filter(a => a.personaId !== id);
-
-  await guardar();
-  render();
-};
+document.getElementById
 
 
 window.añadirEfectivo = async () => {
@@ -903,6 +845,29 @@ const mensaje = encodeURIComponent(
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
   totalRestante.innerHTML=`💰 Total restante: ${total.toFixed(2)} €`;
+  // 🔥 Actualizar HERO
+document.getElementById("heroBalance").textContent =
+  total.toFixed(2) + " €";
+
+// Color dinámico
+const heroBox = document.querySelector(".hero-balance");
+
+if (total < 0) {
+  heroBox.style.background =
+    "linear-gradient(135deg, #e53935, #b71c1c)";
+  document.getElementById("heroMensaje").textContent =
+    "⚠️ Aquí alguien tiene que invitar a algo...";
+} else if (total === 0) {
+  heroBox.style.background =
+    "linear-gradient(135deg, #2196F3, #1565C0)";
+  document.getElementById("heroMensaje").textContent =
+    "🍻 Grupo perfectamente equilibrado.";
+} else {
+  heroBox.style.background =
+   "linear-gradient(135deg, #a5d6a7, #66bb6a)";
+  document.getElementById("heroMensaje").textContent =
+    "😎 Fondo positivo. Todo bajo control.";
+}
   totalRestante.style.color=total<0?"#e53935":"#2e7d32";
   totalRestante.style.fontWeight = "bold";
   totalRestante.style.textDecoration = "underline";
