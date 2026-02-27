@@ -1,0 +1,159 @@
+
+:root{--p:#4CAF50;--f:#f2f2f2;--t:#fff;--r:#e53935}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--f);padding:12px}
+h1{text-align:center}
+h2{font-size:18px}
+
+input,select{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px solid #ccc}
+
+.hidden{display:none}
+@media(min-width:600px){body{max-width:480px;margin:auto}}
+.fecha-listado {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #5c9ded; /* azul suave */
+  margin-top: 2px;
+}
+
+.card {
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--p);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  transition: transform .08s ease, box-shadow .08s ease, opacity .08s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+  box-shadow: 0 3px 8px rgba(0,0,0,.15);
+  opacity: 0.95;
+}
+
+.saldo-positivo {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.saldo-negativo {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.saldo-cero {
+  color: #555;
+}
+#selectorGrupo {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+  font-weight: 500;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+#selectorGrupo:hover {
+  border-color: #0f766e;
+}
+
+#selectorGrupo:focus {
+  outline: none;
+  border-color: #0f766e;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.2);
+}
+/* ===== HERO BALANCE ===== */
+
+.hero-balance {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  color: #1b5e20;
+  padding: 35px;
+  border-radius: 20px;
+  text-align: center;
+  margin: 20px 0 30px 0;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+  border: 2px solid #c8e6c9;
+  transition: all 0.3s ease;
+}
+
+.hero-balance h2 {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 10px;
+}
+
+.hero-balance p {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 5px 0;
+}
+#heroMensaje {
+  margin-top: 10px;
+}
+
+#heroMensaje .estado {
+  display: block;
+  font-weight: 700;
+  font-size: 16px;
+ letter-spacing: 0.5px; 
+}
+
+#heroMensaje .subtexto {
+  display: block;
+  font-size: 13px;
+  opacity: 0.8;
+}
+.estado-badge {
+  display: inline-block;
+ background: #fff176;
+color: #5d4037;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.subtexto {
+  display: block;
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 6px;
+}
+#totalRestante {
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 20px;
+  color: #424242;
+  transition: all 0.3s ease;
+}
+
+.frase-animada {
+  opacity: 0;
+  transform: translateY(8px);
+}
+#totalRestante {
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 18px;
+  margin: 10px 0;
+ background: #f1f8f4;
+  border: 1px solid rgba(76,175,80,0.15);
+  transition: all 0.3s ease;
+}
