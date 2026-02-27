@@ -803,7 +803,23 @@ personas.forEach(p => {
 });
 
 
+// ===== Navegación entre pantallas =====
 
+window.abrirGestionGastos = function() {
+  const principal = document.getElementById("pantallaPrincipal");
+  const gastos = document.getElementById("pantallaGastos");
+
+  if (principal) principal.style.display = "none";
+  if (gastos) gastos.style.display = "block";
+};
+
+window.volverPrincipal = function() {
+  const principal = document.getElementById("pantallaPrincipal");
+  const gastos = document.getElementById("pantallaGastos");
+
+  if (gastos) gastos.style.display = "none";
+  if (principal) principal.style.display = "block";
+};
 
   const gastoPersona={};
   personas.forEach(p=>gastoPersona[p.id]=0);
