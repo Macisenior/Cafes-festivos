@@ -1,0 +1,96 @@
+{
+  "fecha": "2026-02-27T20:33:04.713Z",
+  "personas": [
+    {
+      "aportado": 30,
+      "id": 1770906479600,
+      "nombre": "Pepe"
+    },
+    {
+      "nombre": "Richi",
+      "id": 1771008891731,
+      "aportado": 30
+    },
+    {
+      "aportado": 30,
+      "id": 1771008930861,
+      "nombre": "Mariano"
+    }
+  ],
+  "gastos": [
+    {
+      "descripcion": "Cervezas",
+      "sitio": "Lydo",
+      "monto": 21.8,
+      "participantes": [
+        1770906479600,
+        1771008891731,
+        1771008930861
+      ],
+      "id": 1771014637691,
+      "fecha": "13/2/2026"
+    },
+    {
+      "descripcion": "Cerveza ",
+      "sitio": "Lydo",
+      "monto": 22.8,
+      "participantes": [
+        1770906479600,
+        1771008891731,
+        1771008930861
+      ],
+      "id": 1771677391834,
+      "fecha": "20/2/2026"
+    },
+    {
+      "id": 1772224324931,
+      "sitio": "Lydo",
+      "descripcion": "cervezas",
+      "monto": 18.5,
+      "participantes": [
+        1770906479600,
+        1771008891731,
+        1771008930861
+      ],
+      "fecha": "27/2/2026"
+    }
+  ],
+  "aportaciones": [
+    {
+      "nombre": "Pepe",
+      "date": "2026-02-21",
+      "personaId": 1770906479600,
+      "amount": 10
+    },
+    {
+      "nombre": "Richi",
+      "amount": 10,
+      "personaId": 1771008891731,
+      "date": "2026-02-21"
+    },
+    {
+      "personaId": 1771008930861,
+      "date": "2026-02-21",
+      "amount": 10,
+      "nombre": "Mariano"
+    },
+    {
+      "personaId": 1771008891731,
+      "nombre": "Richi",
+      "amount": 10,
+      "date": "2026-02-27"
+    },
+    {
+      "personaId": 1771008930861,
+      "nombre": "Mariano",
+      "amount": 10,
+      "date": "2026-02-27"
+    },
+    {
+      "personaId": 1770906479600,
+      "nombre": "Pepe",
+      "amount": 10,
+      "date": "2026-02-27"
+    }
+  ]
+}

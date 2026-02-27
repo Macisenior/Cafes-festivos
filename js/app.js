@@ -3,8 +3,7 @@ import {
   getDoc,
   setDoc,
   getDocs,
-  collection,
-  deleteDoc
+  collection,  
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { 
   auth, 
@@ -13,6 +12,7 @@ import {
   onAuthStateChanged 
  
 } from "./firebase.js";
+
 console.log("APP JS CARGADO");
   // 🎭 FRASES DINÁMICAS
 
@@ -31,6 +31,13 @@ const frasesNegativas = [
   "😏 Aquí hay cuentas pendientes...",
   "💸 Alguien está mirando para otro lado...",
   "🔥 Esto se arregla con una cerveza."
+];
+const frasesBajo = [
+  "⚠️ Ojo, vamos ajustados.",
+  "🍺 Últimas rondas con cabeza.",
+  "💸 El fondo empieza a bajar.",
+  "🧐 Controlando gastos...",
+  "📉 Estamos en zona delicada."
 ];
 let estadoAnterior = null;
 let fraseActual = "";
@@ -180,7 +187,8 @@ document.addEventListener("change", async (e) => {
     gastos = [];
     aportaciones = [];
     pinGuardado = null;
-
+await cargar();   // 👈 CARGAR DATOS DEL NUEVO GRUPO
+render();         // 👈 ACTUALIZAR UI
    
   }
 });
@@ -331,36 +339,47 @@ async function guardar() {
   }
 }
 
-window.pedirPin = async ()=>{
-  if(!pinGuardado){
+window.pedirPin = async () => {
+
+  if (!pinGuardado) {
     const nuevo = prompt("Crea un PIN para editar");
-    if(!nuevo) return;
+    if (!nuevo) return;
+
     pinGuardado = nuevo;
     edicionActiva = true;
+
     await guardar();
     activarEdicion();
+    render();   // 🔥 AÑADIR ESTA LÍNEA
     return;
   }
 
   const intento = prompt("Introduce el PIN");
- if(String(intento) === String(pinGuardado)){
-  edicionActiva = true;
-  activarEdicion();
-  render(); // 👈 ESTA LÍNEA FALTA
-}
+
+  if (String(intento) === String(pinGuardado)) {
+    edicionActiva = true;
+    activarEdicion();
+    render();
+  }
 };
 function activarEdicion(){
   if (soloLectura) return;
+
+  edicionActiva = true;   // 🔥 ESTO FALTABA
+
   pinCard.classList.add("hidden");
   modoEdicion.classList.remove("hidden");
-  document.querySelectorAll(".editable").forEach(e=>e.classList.remove("hidden"));
-  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
-if (btnCrearGrupo) btnCrearGrupo.style.display = "block";
-const dangerZone = document.getElementById("dangerZone");
 
-if (grupoActivo !== "general") {
-  dangerZone.classList.remove("hidden");
-}
+  document.querySelectorAll(".editable")
+    .forEach(e => e.classList.remove("hidden"));
+
+  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
+  if (btnCrearGrupo) btnCrearGrupo.style.display = "block";
+
+  const dangerZone = document.getElementById("dangerZone");
+  if (grupoActivo !== "general") {
+    dangerZone.classList.remove("hidden");
+  }
 }
 document.getElementById
 
@@ -392,6 +411,23 @@ window.añadirEfectivo = async () => {
   await guardar();
   render();
 };
+window.eliminarGasto = async function(id) {
+
+  if (!confirm("¿Seguro que quieres eliminar este gasto?")) return;
+
+  // 🔥 eliminar del array local
+  gastos = gastos.filter(g => g.id != id);
+
+  // 🔥 guardar documento actualizado
+  await guardar();
+
+  // 🔥 refrescar UI
+  render();
+
+  console.log("Gasto eliminado correctamente");
+
+};
+
 
 
 window.agregarGasto = async () => {
@@ -563,10 +599,10 @@ if (listaGastos) {
       }).join(", ")}
 
       ${edicionActiva ? `
-        <button onclick="eliminarGasto(${g.id})"
-          style="margin-top:6px; background:#e53935; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">
-          ❌ Eliminar
-        </button>
+     <button onclick="eliminarGasto('${g.id}')"
+  style="margin-top:6px; background:#e53935; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">
+  ❌ Eliminar
+</button>  
       ` : ""}
     </div>
   `).join("");
@@ -618,7 +654,6 @@ if (total < 0) {
 } else {
   estadoActual = "positivo";
 }
-
 if (estadoActual !== estadoAnterior) {
   if (estadoActual === "negativo") {
     fraseActual = frasesNegativas[Math.floor(Math.random() * frasesNegativas.length)];
@@ -630,6 +665,9 @@ if (estadoActual !== estadoAnterior) {
 
   estadoAnterior = estadoActual;
 }
+
+
+
 totalRestante.classList.add("frase-animada");
 
 setTimeout(() => {
@@ -643,7 +681,9 @@ setTimeout(() => {
 }
   totalRestante.classList.remove("frase-animada");
 }, 150);
-
+console.log("TOTAL REAL:", total);
+document.getElementById("heroBalance").textContent =
+  total.toFixed(2) + " €";
   // 🔥 Actualizar HERO
 document.getElementById("heroBalance").textContent =
   total.toFixed(2) + " €";
