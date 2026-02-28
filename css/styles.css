@@ -157,3 +157,40 @@ color: #5d4037;
   border: 1px solid rgba(76,175,80,0.15);
   transition: all 0.3s ease;
 }
+.hero-info {
+  margin-top: 10px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.hero-info span {
+  display: block;
+  margin-top: 4px;
+}
+.hero-meta {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hero-group {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.hero-fixed-date {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.hero-update {
+  margin-top: 12px;
+  font-size: 13px;
+  opacity: 0.9;
+}

@@ -39,35 +39,6 @@ const frasesBajo = [
   "🧐 Controlando gastos...",
   "📉 Estamos en zona delicada."
 ];
-let estadoAnterior = null;
-let fraseActual = "";
-document.addEventListener("DOMContentLoaded", async () => {
- const btnCrearGrupo = document.getElementById("btnCrearGrupo");
- console.log("Intentando login anónimo...");
- signInAnonymously(auth).catch(console.error);
-
-// ✅ Esperar a auth
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const loading = document.getElementById("loading");
-if (loading) loading.style.display = "block"; 
-    console.log("Auth OK", user.uid);
-await new Promise(resolve => setTimeout(resolve, 1500));
-    await cargarListaGrupos();   // 👈 ESTA ES LA LÍNEA QUE FALTA
-    await cargar();
-    render();
-   if (loading) loading.style.display = "none"; 
-  }
-});
-  if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
-  const soloLectura = new URLSearchParams(location.search).has("readonly");
-
-  if (soloLectura) {
-    const bloqueGrupo = document.getElementById("grupoCard");
-    if (bloqueGrupo) bloqueGrupo.style.display = "none";
-  }
-
- 
 // ---- estado ----
 let personas = [];
 let gastos = [];
@@ -77,6 +48,42 @@ let edicionActiva = false;
 let chartPersonas, chartSitios;
 let importandoBackup = false;
 let gastoEditando = null;
+let ultimaActualizacion = null;
+let estadoAnterior = null;
+let fraseActual = "";
+let soloLectura = new URLSearchParams(location.search).has("readonly");
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
+  console.log("Intentando login anónimo...");
+  signInAnonymously(auth).catch(console.error);
+
+  // ✅ Esperar a auth
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const loading = document.getElementById("loading");
+      if (loading) loading.style.display = "block";
+
+      console.log("Auth OK", user.uid);
+
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      await cargarListaGrupos();
+      await cargar();
+      render();
+
+      if (loading) loading.style.display = "none";
+    }
+  });
+
+
+  if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
+ 
+
+  if (soloLectura) {
+    const bloqueGrupo = document.getElementById("grupoCard");
+    if (bloqueGrupo) bloqueGrupo.style.display = "none";
+  }
+}); 
 
 
 // 📂 Grupo activo
@@ -97,8 +104,7 @@ async function cargarListaGrupos() {
 
   snap.forEach(docSnap => {
     const option = document.createElement("option");
-    const data = docSnap.data();
-
+    const data = docSnap.data();    
     option.value = docSnap.id;
     option.textContent = `${data.emoji || "📁"} ${data.nombreVisible || docSnap.id}`;
 
@@ -248,7 +254,33 @@ window.exportarBackup = () => {
   importandoBackup = false;
   render();
 };
- 
+ function textoFechaActualizacion(fechaISO) {
+  if (!fechaISO) return "—";
+
+  const fecha = new Date(fechaISO);
+  const hoy = new Date();
+
+  const diff = Math.floor(
+    (hoy.setHours(0,0,0,0) - fecha.setHours(0,0,0,0)) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diff === 0) return "Actualizado hoy";
+  if (diff === 1) return "Actualizado ayer";
+  return `Actualizado hace ${diff} días`;
+}
+function tiempoDesde(fecha) {
+  if (!fecha) return "—";
+
+  const ahora = new Date();
+  const diff = Math.floor((ahora - fecha) / 1000);
+
+  if (diff < 60) return "Hace unos segundos";
+  if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`;
+  if (diff < 172800) return "Ayer";
+
+  return fecha.toLocaleDateString();
+}
 function crearBackupLocal() {
 console.log("🛟 Backup local automático ejecutado"); //
   const backup = {
@@ -284,25 +316,37 @@ console.log("🛟 Backup local automático ejecutado"); //
 
   console.log("📦 Backup local creado:", nombre);
 }
-
 async function cargar(){
   const snap = await getDoc(getDocRef());
+
   if(snap.exists()){
     const d = snap.data();
-	aportaciones = d.aportaciones || [];
+
+    aportaciones = d.aportaciones || [];
     personas = d.personas || [];
     gastos = d.gastos || [];
     pinGuardado = d.pin || null;
-	    console.log("Datos cargados:", personas, gastos);
+
+    ultimaActualizacion =
+      d.ultimaActualizacion?.toDate?.() ||
+      d.ultimaActualizacion ||
+      null;
+
+    console.log("Datos cargados:", personas, gastos);
+
   } else {
     console.log("Documento NO existe");
   }
-edicionActiva = false; // 🔐 FORZAR bloqueo al cargar
-const btnCrearGrupo = document.getElementById("btnCrearGrupo");
-if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
-const dangerZone = document.getElementById("dangerZone");
-if (dangerZone) dangerZone.classList.add("hidden");
+
+  edicionActiva = false; // 🔐 FORZAR bloqueo al cargar
+
+  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
+  if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
+
+  const dangerZone = document.getElementById("dangerZone");
+  if (dangerZone) dangerZone.classList.add("hidden");
 }
+
 async function guardar() {
   if (!edicionActiva || soloLectura) return;
 
@@ -322,16 +366,17 @@ async function guardar() {
   }
 
   try {
-    await setDoc(
+  await setDoc(
   getDocRef(),
-      {
-        personas,
-        gastos,
-        aportaciones,
-        pin: pinGuardado ?? null
-      },
-      { merge: true } // ✅ A) NO sobrescribe
-    );
+  {
+    personas,
+    gastos,
+    aportaciones,
+    pin: pinGuardado ?? null,
+    ultimaActualizacion: new Date()
+  },
+  { merge: true }
+);
 
     console.log("✅ Guardado seguro en Firestore");
   } catch (e) {
@@ -496,6 +541,46 @@ window.compartirSoloLectura = () => {
   }
 };
 function render(){
+const heroInfo = document.getElementById("heroInfo");
+
+if (heroInfo) {
+
+  let textoRelativo = "Sin registros aún";
+  let textoFechaFija = "—";
+  let badge = "⚪";
+
+  if (ultimaActualizacion) {
+
+    const ahora = new Date();
+    const diff = Math.floor((ahora - ultimaActualizacion) / 1000);
+
+    textoFechaFija = ultimaActualizacion.toLocaleDateString();
+
+    if (diff < 60) {
+      textoRelativo = "Actualizado hace unos segundos";
+      badge = "🟢";
+    } else if (diff < 3600) {
+      textoRelativo = `Actualizado hace ${Math.floor(diff / 60)} min`;
+      badge = "🟢";
+    } else if (diff < 86400) {
+      textoRelativo = `Actualizado hace ${Math.floor(diff / 3600)} h`;
+      badge = "🟡";
+    } else {
+      textoRelativo = `Actualizado el ${textoFechaFija}`;
+      badge = "🔴";
+    }
+  }
+
+ heroInfo.innerHTML = `
+  <div class="hero-meta">
+    <div class="hero-top">
+      <span class="hero-group">${grupoActivo.toUpperCase()}</span>
+      <span class="hero-fixed-date">📅 ${textoFechaFija}</span>
+    </div>
+    <div class="hero-update">${badge} ${textoRelativo}</div>
+  </div>
+`;
+}
   checkboxPersonas.innerHTML = personaEfectivo.innerHTML = "";
 personas.forEach(p => {
 
@@ -523,7 +608,6 @@ personas.forEach(p => {
   personaEfectivo.innerHTML += `
     <option value="${p.id}">${p.nombre}</option>
   `;
-
 });
 
 
@@ -682,6 +766,12 @@ setTimeout(() => {
   totalRestante.classList.remove("frase-animada");
 }, 150);
 console.log("TOTAL REAL:", total);
+const infoGrupoHTML = `
+  <div style="font-size:13px; opacity:0.8; margin-bottom:10px;">
+    📂 <strong>${grupoActivo}</strong><br>
+    📅 ${textoFechaActualizacion(ultimaActualizacion)}
+  </div>
+`;
 document.getElementById("heroBalance").textContent =
   total.toFixed(2) + " €";
   // 🔥 Actualizar HERO
@@ -692,6 +782,17 @@ document.getElementById("heroBalance").textContent =
 const heroBox = document.querySelector(".hero-balance");
 
 if (total < 0) {
+const heroInfo = document.getElementById("heroInfo");
+
+if (heroInfo) {
+  heroInfo.innerHTML = `
+    <span>📁 Grupo: <strong>${grupoActivo}</strong></span>
+    <span>🕒 Actualizado: <strong>${tiempoDesde(
+      ultimaActualizacion ? new Date(ultimaActualizacion) : null
+    )}</strong></span>
+  `;
+} 
+
   heroBox.style.background =
     "linear-gradient(135deg, #e53935, #b71c1c)";
   document.getElementById("heroMensaje").textContent =
@@ -1165,5 +1266,5 @@ y += 10;
   pdf.save("resumen_gastos_1_pagina.pdf");
 };
 
-});
+
 
