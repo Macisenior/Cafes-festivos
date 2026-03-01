@@ -697,15 +697,19 @@ if (listaGastos) {
   var bal = p.aportado - gastoPersona[p.id];
   if (bal > -0.01 && bal < 0.01) bal = 0;
 
-  let texto = "";
+ let color = "";
+let texto = "";
 
-  if (bal < -0.01) {
-    texto = `🔴 ${p.nombre} debe ${(-bal).toFixed(2)} €`;
-  } else if (bal > 0.01) {
-    texto = `🟢 ${p.nombre} dispone de ${bal.toFixed(2)} €`;
-  } else {
-    texto = `⚪ ${p.nombre} equilibrado`;
-  }
+if (bal < -0.01) {
+  color = "#ef4444"; // rojo
+  texto = `${p.nombre} debe ${(-bal).toFixed(2)} €`;
+} else if (bal > 0.01) {
+  color = "#22c55e"; // verde
+  texto = `${p.nombre} dispone de ${bal.toFixed(2)} €`;
+} else {
+  color = "#a78bfa"; // violeta
+  texto = `${p.nombre} equilibrado`;
+}
 
   // 👉 CAPRICHO WHATSAPP
   if (bal < 0 && p.telefono) {
@@ -724,9 +728,25 @@ const mensaje = encodeURIComponent(
     `;
   }
 
-  return texto;
+ return `
+  <div class="estado-linea">
+    <span class="estado-dot" style="background:${color}"></span>
+    <span>${texto}</span>
+  </div>
+`;
 
 }).join("<br>");
+// 📅 Fecha del listado
+const fechaListado = document.getElementById("fechaListado");
+
+if (fechaListado) {
+  if (ultimaActualizacion) {
+    fechaListado.textContent =
+      "📅 " + new Date(ultimaActualizacion).toLocaleDateString();
+  } else {
+    fechaListado.textContent = "📅 —";
+  }
+}
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
  let estadoActual;

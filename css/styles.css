@@ -18,11 +18,11 @@ input,select{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px 
 }
 
 .card {
-  background: #fff;
+  background: #f8fafc; 
   padding: 16px;
   margin-bottom: 14px;
   border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(0,0,0,.08);
+   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 button {
   width: 100%;
@@ -193,4 +193,70 @@ color: #5d4037;
   margin-top: 12px;
   font-size: 13px;
   opacity: 0.9;
+}
+#estadoCard {
+  margin-top: 12px;
+}
+#estadoCard h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fecha-listado {
+  font-size: 15px;          /* antes sería 12px aprox */
+  font-weight: 600;
+  color: #2563eb;           /* azul elegante */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#quienDebe {
+  margin-top: 12px;
+}
+
+#quienDebe div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.estado-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#estadoCard h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fecha-listado {
+  font-size: 13px;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
+.estado-linea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.estado-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.estado-linea {
+  margin-bottom: 8px;
+  font-size: 14px;
 }

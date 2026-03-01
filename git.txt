@@ -11,4 +11,22 @@ git push
 
 git add .
 git commit -m "Fix saltos de página y cabeceras en PDF resumen"
+git
+
+
+
+
+
+
+
+git add .
+git commit -m "Arreglos visuales"
+git push push
+
+
+
+
+git add .
+git commit -m "feat(hero): mejora grupo + fecha fija + estado"
 git push
+firebase deploy --only hosting
