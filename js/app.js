@@ -574,8 +574,11 @@ window.agregarGasto = async () => {
   descripcionGasto.value = "cafes";
   montoGasto.value = "";
   fechaGasto.value = "";
-
+  montoGasto.focus();
   await guardar();
+  if (window.innerWidth < 768) {
+  document.activeElement.blur();
+}
   render();
 };
 
@@ -676,6 +679,10 @@ window.abrirGestionGastos = function() {
 
   if (principal) principal.style.display = "none";
   if (gastos) gastos.style.display = "block";
+  setTimeout(() => {
+  const form = document.getElementById("montoGasto");
+  if (form) form.focus();
+}, 200);
 };
 
 window.volverPrincipal = function() {

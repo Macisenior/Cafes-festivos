@@ -27,6 +27,6 @@ git push push
 
 
 git add .
-git commit -m "feat(hero): mejora grupo + fecha fija + estado"
+git commit -m "mejoras teclado gastos"
 git push
 firebase deploy 
