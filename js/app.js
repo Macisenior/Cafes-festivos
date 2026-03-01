@@ -3,7 +3,8 @@ import {
   getDoc,
   setDoc,
   getDocs,
-  collection,  
+  collection, 
+   deleteDoc,
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 import { 
   auth, 
@@ -51,6 +52,7 @@ let gastoEditando = null;
 let ultimaActualizacion = null;
 let estadoAnterior = null;
 let fraseActual = "";
+let cargandoGrupo = false;
 let soloLectura = new URLSearchParams(location.search).has("readonly");
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -179,23 +181,21 @@ window.borrarGrupo = async () => {
 // 🔄 Cambio de grupo desde selector
 document.addEventListener("change", async (e) => {
   if (e.target.id === "selectorGrupo") {
-  if (!edicionActiva) {
-      alert("Debes desbloquear la edición con el PIN");
-      e.target.value = grupoActivo; // vuelve al grupo anterior
-      return;
-    }
+    cargandoGrupo = true;
     grupoActivo = e.target.value;
     localStorage.setItem("grupoActivo", grupoActivo);
-	
+
+    // 🔒 siempre bloquear edición al cambiar grupo
     edicionActiva = false;
+    pinGuardado = null;
 
     personas = [];
     gastos = [];
     aportaciones = [];
-    pinGuardado = null;
-await cargar();   // 👈 CARGAR DATOS DEL NUEVO GRUPO
-render();         // 👈 ACTUALIZAR UI
-   
+
+    await cargar();
+    render();
+   cargandoGrupo = false; 
   }
 });
 
@@ -345,6 +345,11 @@ async function cargar(){
 
   const dangerZone = document.getElementById("dangerZone");
   if (dangerZone) dangerZone.classList.add("hidden");
+  const pinCard = document.getElementById("pinCard");
+const modoEdicion = document.getElementById("modoEdicion");
+
+if (pinCard) pinCard.classList.remove("hidden");
+if (modoEdicion) modoEdicion.classList.add("hidden");
 }
 
 async function guardar() {
@@ -386,6 +391,27 @@ async function guardar() {
 
 window.pedirPin = async () => {
 
+  // 🔒 Si ya está activo → bloquear directamente
+ if (edicionActiva) {
+
+  edicionActiva = false;
+
+  const pinCard = document.getElementById("pinCard");
+  const modoEdicion = document.getElementById("modoEdicion");
+  const dangerZone = document.getElementById("dangerZone");
+  const btn = document.querySelector("#pinCard button");
+
+  if (pinCard) pinCard.classList.remove("hidden");
+  if (modoEdicion) modoEdicion.classList.add("hidden");
+  if (dangerZone) dangerZone.classList.add("hidden");
+  if (btn) btn.textContent = "🔓 Desbloquear edición";
+  document.querySelectorAll(".editable")
+  .forEach(e => e.classList.add("hidden"));
+  render();
+  return;
+}
+
+  // 🔓 Si está bloqueado → pedir PIN
   if (!pinGuardado) {
     const nuevo = prompt("Crea un PIN para editar");
     if (!nuevo) return;
@@ -395,7 +421,7 @@ window.pedirPin = async () => {
 
     await guardar();
     activarEdicion();
-    render();   // 🔥 AÑADIR ESTA LÍNEA
+    render();
     return;
   }
 
@@ -411,23 +437,54 @@ function activarEdicion(){
   if (soloLectura) return;
 
   edicionActiva = true;   // 🔥 ESTO FALTABA
-
-  pinCard.classList.add("hidden");
+  
   modoEdicion.classList.remove("hidden");
-
+  modoEdicion.classList.add("hidden");
   document.querySelectorAll(".editable")
     .forEach(e => e.classList.remove("hidden"));
 
   const btnCrearGrupo = document.getElementById("btnCrearGrupo");
   if (btnCrearGrupo) btnCrearGrupo.style.display = "block";
-
+const btn = document.querySelector("#pinCard button");
+if (btn) btn.textContent = "🔒 Bloquear edición";
   const dangerZone = document.getElementById("dangerZone");
   if (grupoActivo !== "general") {
     dangerZone.classList.remove("hidden");
   }
 }
-document.getElementById
 
+function agregarPersona() {
+
+  if (!edicionActiva) {
+    alert("Debes desbloquear la edición con el PIN");
+    return;
+  }
+
+  const nombre = document.getElementById("nombrePersona").value.trim();
+  const aporte = +document.getElementById("aportePersona").value;
+  const telefono = document.getElementById("telefonoPersona").value.trim();
+
+  if (!nombre || !aporte) {
+    alert("Faltan datos");
+    return;
+  }
+
+  personas.push({
+    id: Date.now(),
+    nombre,
+    aportado: aporte,
+    telefono
+  });
+
+  document.getElementById("nombrePersona").value = "";
+  document.getElementById("aportePersona").value = "";
+  document.getElementById("telefonoPersona").value = "";
+
+  guardar();
+  render();
+}
+
+window.agregarPersona = agregarPersona;
 
 window.añadirEfectivo = async () => {
   const p = personas.find(p => p.id == personaEfectivo.value);

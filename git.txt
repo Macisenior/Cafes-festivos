@@ -29,4 +29,4 @@ git push push
 git add .
 git commit -m "feat(hero): mejora grupo + fecha fija + estado"
 git push
-firebase deploy --only hosting
+firebase deploy 
