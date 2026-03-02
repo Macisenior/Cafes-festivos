@@ -84,20 +84,26 @@
 </div>
 
 <div class="card editable hidden">
-<h2>💳 Añadir gasto</h2>
-<select id="sitio">
-  <option>Flap</option>
-  <option>Colono</option>
-  <option>Lydo</option>
-</select> 
-<input id="fechaGasto" type="date">
-<input id="descripcionGasto" placeholder="Descripción" value="cafes">
+  <h2>💳 Añadir gasto</h2>
+  <div id="sitiosContainer" class="sitios-container"></div>
+ <input id="fechaGasto" type="date">
+ 
+ 
+  <input id="descripcionGasto">
 
-<input id="montoGasto" type="number" placeholder="Importe €">
-<div id="checkboxPersonas"></div>
-<button id="btnAgregarGasto" onclick="agregarGasto()" style="background: orange;">
-  Añadir gasto
-</button>
+  <div id="accionesParticipantes">
+    <button id="btnTodos" type="button">Todos</button>
+    <button id="btnLimpiar" type="button">Limpiar</button>
+  </div>
+
+  <div id="checkboxPersonas"></div>
+
+  <input id="montoGasto" type="number" placeholder="Importe €">
+
+  <button id="btnAgregarGasto" onclick="agregarGasto()" style="background: orange;">
+    Añadir gasto
+  </button>
+</div>
 
 <div class="card">
   <h2>📊 Resumen por persona</h2>

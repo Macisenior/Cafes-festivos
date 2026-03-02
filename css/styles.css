@@ -260,3 +260,127 @@ color: #5d4037;
   margin-bottom: 8px;
   font-size: 14px;
 }
+@media (max-width: 768px) {
+  #btnAgregarGasto {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+  }
+}
+#accionesParticipantes {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#accionesParticipantes button {
+  flex: 1;
+  border-radius: 10px;
+}
+.persona-chip {
+  display: block;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: #f2f2f2;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.persona-chip input {
+  display: none;
+}
+
+.persona-chip span {
+  display: block;
+}
+
+.persona-chip:has(input:checked) {
+  background: #1f2937; /* oscuro exclusivo */
+  color: white;
+}
+#accionesParticipantes button {
+  background: #e5e7eb;   /* gris claro elegante */
+  color: #1f2937;        /* mismo oscuro que usas en los chips */
+  font-weight: 600;
+}
+
+#accionesParticipantes button:hover {
+  background: #d1d5db;
+}
+#selectorGrupo:disabled {
+  background: #e5e7eb;
+  color: #6b7280;
+  cursor: not-allowed;
+  opacity: 1; /* quitamos el efecto lavado feo */
+}
+#sitio {
+  position: relative;
+  z-index: 10;
+}
+
+#fechaGasto {
+  position: relative;
+  z-index: 1;
+}
+#sitio {
+  margin-bottom: 12px;
+}
+.card.editable {
+  position: relative;
+  overflow: visible;
+}
+#sitio {
+  display: block;
+}
+.sitio-chip {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  background: #e5e7eb;   /* gris claro */
+  color: #111;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.sitio-chip.activo {
+  background: #1f2937;   /* oscuro elegante */
+  color: white;
+}
+.sitio-chip {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  background: #e5e7eb;
+  color: #111;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.sitio-chip.activo {
+  background: var(--color-sitio);
+  color: white;
+}
+.sitio-chip {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.sitio-chip.activo {
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+  outline: 3px solid rgba(255,255,255,0.6);
+}

@@ -41,6 +41,13 @@ const frasesBajo = [
   "📉 Estamos en zona delicada."
 ];
 // ---- estado ----
+
+let listaSitios = [
+  { nombre: "Flap", color: "#4CAF50" },
+  { nombre: "Colono", color: "#2196F3" },
+  { nombre: "Lydo", color: "#FF9800" }
+];
+
 let personas = [];
 let gastos = [];
 let aportaciones = [];
@@ -529,58 +536,68 @@ window.eliminarGasto = async function(id) {
   console.log("Gasto eliminado correctamente");
 
 };
-
-
-
 window.agregarGasto = async () => {
-  const part = [...checkboxPersonas.querySelectorAll("input:checked")]
+
+  // Participantes seleccionados
+  const part = [...document.querySelectorAll("#checkboxPersonas input:checked")]
     .map(c => +c.value);
 
+  if (part.length === 0) {
+    alert("Selecciona al menos un participante");
+    return;
+  }
+
+  // Sitio seleccionado
+  const btnActivo = document.querySelector(".sitio-chip.activo");
+  const sitioSeleccionado = btnActivo ? btnActivo.dataset.sitio : null;
+
+  if (!sitioSeleccionado) {
+    alert("Selecciona un sitio");
+    return;
+  }
+
+  // Datos básicos
+  const descripcion = descripcionGasto.value.trim();
+  const monto = +montoGasto.value;
   const fecha = fechaGasto.value
     ? new Date(fechaGasto.value).toLocaleDateString()
     : new Date().toLocaleDateString();
 
- if (gastoEditando) {
+  if (!monto || monto <= 0) {
+    alert("Introduce un importe válido");
+    return;
+  }
 
-  gastos = gastos.map(g =>
-    g.id === gastoEditando
-      ? {
-          ...g,
-          sitio: sitio.value,
-          descripcion: descripcionGasto.value,
-          monto: +montoGasto.value,
-          participantes: part
-        }
-      : g
-  );
-
-  gastoEditando = null;
-
-  const btn = document.querySelector("#botonAgregarGasto");
-  if (btn) btn.textContent = "Añadir gasto";
-
-} else {
-
+  // Crear gasto
   gastos.push({
     id: Date.now(),
-    sitio: sitio.value,
-    descripcion: descripcionGasto.value,
-    monto: +montoGasto.value,
+    sitio: sitioSeleccionado,
+    descripcion: descripcion || "cafes",
+    monto,
     participantes: part,
     fecha
   });
 
-} 
-  descripcionGasto.value = "cafes";
-  montoGasto.value = "";
-  fechaGasto.value = "";
-  montoGasto.focus();
+  // Guardar
   await guardar();
-  if (window.innerWidth < 768) {
-  document.activeElement.blur();
-}
   render();
+
+  // 🔄 Reset inteligente
+  montoGasto.value = "";
+  descripcionGasto.value = "cafes";
+
+  const hoy = new Date().toISOString().split("T")[0];
+  fechaGasto.value = hoy;
+
+  document.querySelectorAll("#checkboxPersonas input")
+    .forEach(cb => cb.checked = false);
+
+  // Reset sitio al primero
+  document.querySelectorAll(".sitio-chip")
+    .forEach((b, i) => b.classList.toggle("activo", i === 0));
 };
+
+
 
 window.actualizarTelefono = async (id, valor) => {
   const persona = personas.find(p => p.id === id);
@@ -590,6 +607,29 @@ window.actualizarTelefono = async (id, valor) => {
 
   await guardar();
   render();
+  // 🔄 Reset inteligente para uso diario
+const montoInput = document.getElementById("montoGasto");
+const fechaInput = document.getElementById("fechaGasto");
+const descripcionInput = document.getElementById("descripcionGasto");
+
+// limpiar importe
+if (montoInput) montoInput.value = "";
+
+// fecha vuelve a hoy
+if (fechaInput) {
+  const hoy = new Date().toISOString().split("T")[0];
+  fechaInput.value = hoy;
+}
+
+// descripción vuelve a "cafes"
+if (descripcionInput) {
+  descripcionInput.value = "cafes";
+}
+
+// desmarcar participantes
+document
+  .querySelectorAll("#checkboxPersonas input[type='checkbox']")
+  .forEach(cb => cb.checked = false);
 };
 window.compartirSoloLectura = () => {
   const url = location.origin + location.pathname + "?readonly";
@@ -601,8 +641,51 @@ window.compartirSoloLectura = () => {
   }
 };
 function render(){
-const heroInfo = document.getElementById("heroInfo");
+  
+ const sitiosContainer = document.getElementById("sitiosContainer");
 
+if (sitiosContainer) {
+  sitiosContainer.innerHTML = "";
+
+ listaSitios.forEach((s, i) => {
+  sitiosContainer.innerHTML += `
+    <button 
+      class="sitio-chip ${i === 0 ? "activo" : ""}" 
+      data-sitio="${s.nombre}"
+      style="background:${s.color}">
+      ${s.nombre}
+    </button>
+  `;
+});
+
+  // Evento selección
+document.querySelectorAll(".sitio-chip").forEach(btn => {
+  btn.addEventListener("click", () => {
+
+    document.querySelectorAll(".sitio-chip")
+      .forEach(b => b.classList.remove("activo"));
+
+    btn.classList.add("activo");
+
+    sitioSeleccionado = btn.dataset.sitio;
+  });
+});  
+} 
+ console.log("RENDER");
+const heroInfo = document.getElementById("heroInfo");
+const grupoSelect = document.getElementById("selectorGrupo");
+if (grupoSelect) {
+  grupoSelect.disabled = !edicionActiva;
+}
+const fechaInput = document.getElementById("fechaGasto");
+if (fechaInput && !fechaInput.value) {
+  const hoy = new Date().toISOString().split("T")[0];
+  fechaInput.value = hoy;
+}
+const descripcionInput = document.getElementById("descripcionGasto");
+if (descripcionInput && !descripcionInput.value) {
+  descripcionInput.value = "cafes";
+}
 if (heroInfo) {
 
   let textoRelativo = "Sin registros aún";
@@ -641,35 +724,43 @@ if (heroInfo) {
   </div>
 `;
 }
-  checkboxPersonas.innerHTML = personaEfectivo.innerHTML = "";
-personas.forEach(p => {
+ //checkboxPersonas.innerHTML = "";
+personaEfectivo.innerHTML = "";
 
-  let botonEliminar = "";
+if (edicionActiva) {
+  personas.forEach(p => {
 
-  if (edicionActiva) {
-    botonEliminar = `
-      <button onclick="eliminarPersona(${p.id})"
-        style="background:#e53935; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:14px;">
-        🗑
-      </button>
+    checkboxPersonas.innerHTML += `
+      <label class="persona-chip">
+        <input type="checkbox" value="${p.id}">
+        <span>${p.nombre}</span>
+      </label>
     `;
-  }
 
-  checkboxPersonas.innerHTML += `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="checkbox" value="${p.id}" style="width:18px; height:18px; cursor:pointer;">
-        <span style="font-size:15px;">${p.nombre}</span>
-      </div>
-      ${botonEliminar}
-    </div>
-  `;
+    personaEfectivo.innerHTML += `
+      <option value="${p.id}">${p.nombre}</option>
+    `;
+  });
+} 
+ 
+const btnTodos = document.getElementById("btnTodos");
+const btnLimpiar = document.getElementById("btnLimpiar");
 
-  personaEfectivo.innerHTML += `
-    <option value="${p.id}">${p.nombre}</option>
-  `;
-});
+if (btnTodos) {
+  btnTodos.onclick = () => {
+    checkboxPersonas
+      .querySelectorAll("input[type='checkbox']")
+      .forEach(cb => cb.checked = true);
+  };
+}
 
+if (btnLimpiar) {
+  btnLimpiar.onclick = () => {
+    checkboxPersonas
+      .querySelectorAll("input[type='checkbox']")
+      .forEach(cb => cb.checked = false);
+  };
+}
 
 // ===== Navegación entre pantallas =====
 
@@ -911,7 +1002,14 @@ if (heroInfo) {
     options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
   });
 
-  const sitios={Flap:0,Colono:0,Lydo:0};
+ const sitios = {};
+
+gastos.forEach(g => {
+  if (!sitios[g.sitio]) {
+    sitios[g.sitio] = 0;
+  }
+  sitios[g.sitio] += g.monto;
+});
   gastos.forEach(g=>sitios[g.sitio]+=g.monto);
   if(chartSitios) chartSitios.destroy();
   chartSitios=new Chart(graficoSitios,{
