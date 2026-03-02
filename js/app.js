@@ -10,10 +10,9 @@ import {
   auth, 
   db, 
   signInAnonymously, 
-  onAuthStateChanged 
- 
+  onAuthStateChanged,
+  onSnapshot
 } from "./firebase.js";
-
 console.log("APP JS CARGADO");
   // 🎭 FRASES DINÁMICAS
 
@@ -47,7 +46,10 @@ let listaSitios = [
   { nombre: "Colono", color: "#2196F3" },
   { nombre: "Lydo", color: "#FF9800" }
 ];
-
+let btnCrearGrupo;
+let dangerZone;
+let pinCard;
+let modoEdicion;
 let personas = [];
 let gastos = [];
 let aportaciones = [];
@@ -59,31 +61,31 @@ let gastoEditando = null;
 let ultimaActualizacion = null;
 let estadoAnterior = null;
 let fraseActual = "";
+let unsubscribeGrupo = null;
 let cargandoGrupo = false;
 let soloLectura = new URLSearchParams(location.search).has("readonly");
 document.addEventListener("DOMContentLoaded", async () => {
 
-  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
+ 
   console.log("Intentando login anónimo...");
   signInAnonymously(auth).catch(console.error);
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
 
-  // ✅ Esperar a auth
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const loading = document.getElementById("loading");
-      if (loading) loading.style.display = "block";
+    const loading = document.getElementById("loading");
+    if (loading) loading.style.display = "block";
 
-      console.log("Auth OK", user.uid);
+    console.log("Auth OK", user.uid);
 
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      await cargarListaGrupos();
-      await cargar();
-      render();
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await cargarListaGrupos();
 
-      if (loading) loading.style.display = "none";
-    }
-  });
+    cargar();   // 🔥 sin await
+    // ❌ quitar render();
 
+    if (loading) loading.style.display = "none";
+  }
+});
 
   if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
  
@@ -134,29 +136,33 @@ async function cargarListaGrupos() {
 
 // ➕ Crear nuevo grupo
 window.crearGrupo = async () => {
-console.log("Estado edicionActiva:", edicionActiva);
-if (!edicionActiva) {
+
+  console.log("Estado edicionActiva:", edicionActiva);
+
+  if (!edicionActiva) {
     alert("Debes desbloquear la edición con el PIN");
     return;
   }
+
   const nombre = prompt("Nombre del nuevo grupo:");
   if (!nombre) return;
 
   await setDoc(doc(db, "grupos", nombre), {
-  nombreVisible: "☕ " + nombre,
-  emoji: "☕",
-  color: "#0f766e", // verde elegante
-  personas: [],
-  gastos: [],
-  aportaciones: [],
-  pin: null
-});
+    nombreVisible: "☕ " + nombre,
+    emoji: "☕",
+    color: "#0f766e",
+    personas: [],
+    gastos: [],
+    aportaciones: [],
+    pin: null
+  });
+
   grupoActivo = nombre;
   localStorage.setItem("grupoActivo", nombre);
 
   await cargarListaGrupos();
-  await cargar();
-  render();
+
+  cargar();   // 🔥 sin await
 };
 
 
@@ -181,30 +187,40 @@ window.borrarGrupo = async () => {
   localStorage.setItem("grupoActivo", "general");
 
   await cargarListaGrupos();
-  await cargar();
-  render();
+
+  cargar();   // 🔥 sin await
 };
 
 // 🔄 Cambio de grupo desde selector
 document.addEventListener("change", async (e) => {
   if (e.target.id === "selectorGrupo") {
-    cargandoGrupo = true;
+
+    if (!edicionActiva) {
+      alert("Debes desbloquear la edición con el PIN");
+      e.target.value = grupoActivo;
+      return;
+    }
+
+    // 🔒 Bloqueamos edición inmediatamente
+    bloquearEdicion();
+
+    const loading = document.getElementById("loading");
+    if (loading) loading.style.display = "block";
+
     grupoActivo = e.target.value;
     localStorage.setItem("grupoActivo", grupoActivo);
 
-    // 🔒 siempre bloquear edición al cambiar grupo
-    edicionActiva = false;
-    pinGuardado = null;
+    // 🧹 Limpiar estado visual
+   
 
-    personas = [];
-    gastos = [];
-    aportaciones = [];
+    cargar();   // 🔥 sin await
+    // ❌ quitar render()
 
-    await cargar();
-    render();
-   cargandoGrupo = false; 
+    if (loading) loading.style.display = "none";
   }
 });
+
+   
 
 // 🔐 Auth anónima
 
@@ -323,41 +339,52 @@ console.log("🛟 Backup local automático ejecutado"); //
 
   console.log("📦 Backup local creado:", nombre);
 }
-async function cargar(){
-  const snap = await getDoc(getDocRef());
+function cargar(){
 
-  if(snap.exists()){
-    const d = snap.data();
-
-    aportaciones = d.aportaciones || [];
-    personas = d.personas || [];
-    gastos = d.gastos || [];
-    pinGuardado = d.pin || null;
-
-    ultimaActualizacion =
-      d.ultimaActualizacion?.toDate?.() ||
-      d.ultimaActualizacion ||
-      null;
-
-    console.log("Datos cargados:", personas, gastos);
-
-  } else {
-    console.log("Documento NO existe");
+  if (unsubscribeGrupo) {
+    unsubscribeGrupo(); // 🔥 desuscribirse del grupo anterior
   }
 
+  const docRef = getDocRef();
+
+  unsubscribeGrupo = onSnapshot(docRef, (snap) => {
+
+    if (snap.exists()) {
+      const d = snap.data();
+
+      aportaciones = d.aportaciones || [];
+      personas = d.personas || [];
+      gastos = d.gastos || [];
+      pinGuardado = d.pin || null;
+
+      ultimaActualizacion =
+        d.ultimaActualizacion?.toDate?.() ||
+        d.ultimaActualizacion ||
+        null;
+     
+    } 
+ render();
+   
+  });
+}
+
+   
+
+ 
+ 
   edicionActiva = false; // 🔐 FORZAR bloqueo al cargar
 
-  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
+ 
   if (btnCrearGrupo) btnCrearGrupo.style.display = "none";
 
-  const dangerZone = document.getElementById("dangerZone");
+  
   if (dangerZone) dangerZone.classList.add("hidden");
-  const pinCard = document.getElementById("pinCard");
-const modoEdicion = document.getElementById("modoEdicion");
+  
+
 
 if (pinCard) pinCard.classList.remove("hidden");
 if (modoEdicion) modoEdicion.classList.add("hidden");
-}
+
 
 async function guardar() {
   if (!edicionActiva || soloLectura) return;
@@ -395,30 +422,25 @@ async function guardar() {
     console.error("❌ Error al guardar:", e);
   }
 }
-
 window.pedirPin = async () => {
 
-  // 🔒 Si ya está activo → bloquear directamente
- if (edicionActiva) {
+  if (edicionActiva) {
 
   edicionActiva = false;
 
-  const pinCard = document.getElementById("pinCard");
-  const modoEdicion = document.getElementById("modoEdicion");
-  const dangerZone = document.getElementById("dangerZone");
-  const btn = document.querySelector("#pinCard button");
-
-  if (pinCard) pinCard.classList.remove("hidden");
-  if (modoEdicion) modoEdicion.classList.add("hidden");
-  if (dangerZone) dangerZone.classList.add("hidden");
-  if (btn) btn.textContent = "🔓 Desbloquear edición";
   document.querySelectorAll(".editable")
-  .forEach(e => e.classList.add("hidden"));
-  render();
+    .forEach(e => e.classList.add("hidden"));
+
+  if (btnCrearGrupo)
+    btnCrearGrupo.style.display = "none";
+
+  if (dangerZone)
+    dangerZone.classList.add("hidden");
+
+  actualizarBotonEdicion();
+  render();   // 🔥 ESTO ES LO QUE FALTABA
   return;
 }
-
-  // 🔓 Si está bloqueado → pedir PIN
   if (!pinGuardado) {
     const nuevo = prompt("Crea un PIN para editar");
     if (!nuevo) return;
@@ -433,32 +455,58 @@ window.pedirPin = async () => {
   }
 
   const intento = prompt("Introduce el PIN");
-
   if (String(intento) === String(pinGuardado)) {
     edicionActiva = true;
     activarEdicion();
     render();
   }
 };
-function activarEdicion(){
+
+
+function actualizarBotonEdicion() {
+  const btn = document.querySelector("#pinCard button");
+  if (!btn) return;
+
+  if (edicionActiva) {
+    btn.textContent = "🔒 Bloquear edición";
+    btn.style.background = "#dc2626"; // rojo elegante
+  } else {
+    btn.textContent = "🔓 Desbloquear edición";
+    btn.style.background = "#16a34a"; // verde elegante
+  }
+}
+function activarEdicion() {
   if (soloLectura) return;
 
-  edicionActiva = true;   // 🔥 ESTO FALTABA
-  
-  modoEdicion.classList.remove("hidden");
-  modoEdicion.classList.add("hidden");
+  edicionActiva = true;
+
   document.querySelectorAll(".editable")
     .forEach(e => e.classList.remove("hidden"));
 
-  const btnCrearGrupo = document.getElementById("btnCrearGrupo");
-  if (btnCrearGrupo) btnCrearGrupo.style.display = "block";
-const btn = document.querySelector("#pinCard button");
-if (btn) btn.textContent = "🔒 Bloquear edición";
-  const dangerZone = document.getElementById("dangerZone");
-  if (grupoActivo !== "general") {
+  if (btnCrearGrupo)
+    btnCrearGrupo.style.display = "block";
+
+  if (dangerZone && grupoActivo !== "general")
     dangerZone.classList.remove("hidden");
-  }
+
+  actualizarBotonEdicion();
 }
+function bloquearEdicion() {
+  edicionActiva = false;
+
+  document.querySelectorAll(".editable")
+    .forEach(e => e.classList.add("hidden"));
+
+  if (btnCrearGrupo)
+    btnCrearGrupo.style.display = "none";
+
+  if (dangerZone)
+    dangerZone.classList.add("hidden");
+
+  actualizarBotonEdicion();
+}
+ 
+ 
 
 function agregarPersona() {
 
@@ -724,10 +772,10 @@ if (heroInfo) {
   </div>
 `;
 }
- //checkboxPersonas.innerHTML = "";
+checkboxPersonas.innerHTML = "";
 personaEfectivo.innerHTML = "";
 
-if (edicionActiva) {
+ {
   personas.forEach(p => {
 
     checkboxPersonas.innerHTML += `
