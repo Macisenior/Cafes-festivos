@@ -16,149 +16,196 @@
 
 
 <body>
-<div id="pantallaPrincipal">
- <div id="loading" style="display:none; font-weight:bold; margin:10px 0;">
-  ⏳ Cargando datos...
-</div> 
-  <!-- TODO lo que ya tienes: resumen, gráficos, etc -->
-<h1>💸 Gastos del Grupo</h1>
-<div class="hero-balance"> 
-    <div id="heroInfo"></div> 
-  <h2>Total restante</h2>
-  <p id="heroBalance">0 €</p>
- <div id="heroMensaje">
-   <div id="heroUpdate"></div>
-  <span class="estado">😎 Fondo positivo</span>
-  <span class="subtexto">Todo bajo control.</span>
-</div>
-</div>
-<div class="card" id="estadoCard">
-  <h2>
-    📊 Estado de cuentas
-    <span class="fecha-listado" id="fechaListado"></span>
-  </h2>
-  <div id="quienDebe"></div>
-</div>
-<div class="card" id="grupoCard">
-  <h2>📂 Grupo activo</h2>
-  <select id="selectorGrupo"></select>
-<button id="btnCrearGrupo" onclick="crearGrupo()" style="background: teal;">
-  ➕ Crear nuevo grupo
-</button>
 
-</div>
-<div class="card" id="cardGrupo">
-<div class="card" id="totalRestante"></div>
-<div class="card" id="shareCard">
-  <button onclick="compartirSoloLectura()" style="background: orangered;">👥 Compartir vista solo lectura</button>
-</div>
+<div id="pantallaPrincipal" class="pantalla activa">
 
-<div class="card" id="pinCard">
-  <button onclick="pedirPin()">🔓 Desbloquear edición</button>
-</div>
-
-<div class="card hidden" id="modoEdicion">
-  🔐 Edición desbloqueada
-</div>
-
-<div class="card editable hidden">
-<h2>👤 Añadir persona</h2>
-<input id="nombrePersona" placeholder="Nombre">
-<input id="aportePersona" type="number" placeholder="Aportó €">
-<input id="telefonoPersona" placeholder="Teléfono (sin + ni espacios)">
-<button onclick="agregarPersona()">Añadir</button>
-</div>
-
-<div class="card editable hidden">
-<h2>➕ Añadir efectivo</h2>
-<select id="personaEfectivo"></select>
-<input id="efectivoExtra" type="number" placeholder="Cantidad €">
-<label for="cashDate">Fecha del ingreso</label>
-<input
-  type="date"
-  id="cashDate"
-  name="cashDate"
-/>
-
-<button onclick="añadirEfectivo()" style="background: yellowgreen;">Añadir efectivo</button>
-</div>
-
-<div class="card editable hidden">
-  <h2>💳 Añadir gasto</h2>
-  <div id="sitiosContainer" class="sitios-container"></div>
- <input id="fechaGasto" type="date">
- 
- 
-  <input id="descripcionGasto">
-
-  <div id="accionesParticipantes">
-    <button id="btnTodos" type="button">Todos</button>
-    <button id="btnLimpiar" type="button">Limpiar</button>
+  <div id="loading" style="display:none; font-weight:bold; margin:10px 0;">
+    ⏳ Cargando datos...
   </div>
 
-  <div id="checkboxPersonas"></div>
+  <h1>💸 Gastos del Grupo</h1>
 
-  <input id="montoGasto" type="number" placeholder="Importe €">
+  <!-- HERO -->
+  <div class="hero-balance">
+    <div id="heroInfo"></div>
+    <h2>Total restante</h2>
+    <p id="heroBalance">0 €</p>
+    <div id="heroMensaje">
+      <div id="heroUpdate"></div>
+      <span class="estado">😎 Fondo positivo</span>
+      <span class="subtexto">Todo bajo control.</span>
+    </div>
+  </div>
 
-  <button id="btnAgregarGasto" onclick="agregarGasto()" style="background: orange;">
-    Añadir gasto
-  </button>
-</div>
+  <!-- ESTADO -->
+  <div class="card" id="estadoCard">
+    <h2>
+      📊 Estado de cuentas
+      <span class="fecha-listado" id="fechaListado"></span>
+    </h2>
+    <div id="quienDebe"></div>
+  </div>
 
-<div class="card">
-  <h2>📊 Resumen por persona</h2>
-  <div id="resumenPersonas"></div>
-</div>
+  <!-- GRUPO -->
+ <div class="card editable hidden" id="grupoCard">
+    <h2>📂 Grupo activo</h2>
+    <div id="selectorGrupoChips" class="grupo-chips"></div>
+    <button id="btnCrearGrupo" onclick="crearGrupo()" style="background: teal;">
+      ➕ Crear nuevo grupo
+    </button>
+  </div>
 
+  <!-- SHARE + PIN -->
+  <div class="card" id="shareCard">
+    <button onclick="compartirSoloLectura()" style="background: orangered;">
+      👥 Compartir vista solo lectura
+    </button>
+  </div>
 
+  <div class="card" id="pinCard">
+    <button onclick="pedirPin()">🔓 Desbloquear edición</button>
+  </div>
 
-<div class="card">
-  <h2>📊 Aportado vs Gastado</h2>
-  <canvas id="graficoPersonas"></canvas>
-</div>
-<button onclick="abrirGestionGastos()"
-  style="background:#222; color:white; padding:10px 14px; border:none; border-radius:8px;">
-  📋 Gestionar gastos
-</button>
-<div class="card">
-  <h2>📊 Gasto por sitio</h2>
-  <canvas id="graficoSitios"></canvas>
-</div>
-<div class="card">
-  <button onclick="generarPDF()" style="background: darkviolet;" >📄 Descargar PDF PRO</button>
-</div>
-<div class="card">
-  <button onclick="generarPDFResumen()" style="background: violet;">📊 Resumen</button>
-</div>
-<div class="card editable hidden">
-  <button onclick="exportarBackup()" style="background: blue;">💾 Copia de seguridad</button>
-</div>
+  <div class="card hidden" id="modoEdicion">
+    🔐 Edición desbloqueada
+  </div>
 
-<div class="card editable hidden">
-  <input type="file" id="archivoBackup" accept=".json">
-  <button onclick="importarBackup()" style="background: dodgerblue;">♻️ Restaurar copia</button>
-</div>
-<div class="card hidden" id="dangerZone">
-  <h3 style="color:red;">⚠ Zona peligrosa</h3>
-  <button onclick="borrarGrupo()" style="background: darkred;">
-    🗑 Borrar grupo actual
-  </button>
-</div>
-</div>
-</div>
-<div id="pantallaGastos" style="display:none;">
+ 
+  <!-- AÑADIR EFECTIVO -->
+  <div class="card editable hidden">
+    <h2>➕ Añadir efectivo</h2>
+    <select id="personaEfectivo"></select>
+    <input id="efectivoExtra" type="number" placeholder="Cantidad €">
+    <label for="cashDate">Fecha del ingreso</label>
+    <input type="date" id="cashDate" name="cashDate">
+    <button onclick="añadirEfectivo()" style="background: yellowgreen;">
+      Añadir efectivo
+    </button>
+  </div>
 
+  <!-- AÑADIR GASTO -->
+  <div class="card editable hidden">
+    <h2>💳 Añadir gasto</h2>
+    <div id="sitiosContainer" class="sitios-container"></div>
+    <input id="fechaGasto" type="date">
+    <input id="descripcionGasto">
+
+    <div id="accionesParticipantes">
+      <button id="btnTodos" type="button">Todos</button>
+      <button id="btnLimpiar" type="button">Limpiar</button>
+    </div>
+
+    <div id="checkboxPersonas"></div>
+
+    <input id="montoGasto" type="number" placeholder="Importe €">
+
+    <button id="btnAgregarGasto" onclick="agregarGasto()" style="background: orange;">
+      Añadir gasto
+    </button>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="card">
+    <h2>📊 Resumen por persona</h2>
+    <div id="resumenPersonas"></div>
+  </div>
+
+  <div class="card">
+    <h2>📊 Aportado vs Gastado</h2>
+    <canvas id="graficoPersonas"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>📊 Gasto por sitio</h2>
+    <canvas id="graficoSitios"></canvas>
+  </div>
+
+  <!-- GESTIÓN (solo edición) -->
+  <div class="card editable hidden">
+    <button onclick="abrirGestionGastos()"
+      style="background:#222; color:white; padding:10px 14px; border:none; border-radius:8px;">
+      📋 Gestionar gastos
+    </button>
+  </div>
+
+  <div class="card editable hidden">
+    <button onclick="abrirGestionUsuarios()"
+      style="background:#222; color:white; padding:10px 14px; border:none; border-radius:8px;">
+      👥 Gestionar usuarios
+    </button>
+  </div>
+
+  <!-- PDF -->
+  <div class="card">
+    <button onclick="generarPDF()" style="background: darkviolet;">
+      📄 Descargar PDF PRO
+    </button>
+  </div>
+
+  <div class="card">
+    <button onclick="generarPDFResumen()" style="background: violet;">
+      📊 Resumen
+    </button>
+  </div>
+
+  <!-- BACKUP -->
+  <div class="card editable hidden">
+    <button onclick="exportarBackup()" style="background: blue;">
+      💾 Copia de seguridad
+    </button>
+  </div>
+
+  <div class="card editable hidden">
+    <input type="file" id="archivoBackup" accept=".json">
+    <button onclick="importarBackup()" style="background: dodgerblue;">
+      ♻️ Restaurar copia
+    </button>
+  </div>
+
+  <!-- ZONA PELIGROSA -->
+  <div class="card hidden" id="dangerZone">
+    <h3 style="color:red;">⚠ Zona peligrosa</h3>
+    <button onclick="borrarGrupo()" style="background: darkred;">
+      🗑 Borrar grupo actual
+    </button>
+  </div>
+
+</div> <!-- FIN pantallaPrincipal -->
+
+<!-- PANTALLA GASTOS -->
+<div id="pantallaGastos" class="pantalla">
   <button onclick="volverPrincipal()"
     style="background:#444; color:white; padding:8px 12px; border:none; border-radius:6px; margin-bottom:10px;">
     ← Volver
   </button>
-
   <h2>📋 Gestionar gastos</h2>
-
   <div id="listaGastos"></div>
-
 </div>
-<
+
+<!-- PANTALLA USUARIOS -->
+<!-- PANTALLA USUARIOS -->
+<div id="pantallaUsuarios" class="pantalla">
+
+  <button onclick="volverPrincipal()">← Volver</button>
+
+  <h2>👥 Gestionar usuarios</h2>
+
+  <!-- AÑADIR PERSONA -->
+  <div class="card editable hidden">
+    <h2>👤 Añadir persona</h2>
+    <input id="nombrePersona" placeholder="Nombre">
+    <input id="aportePersona" type="number" placeholder="Aportó €">
+    <input id="telefonoPersona" placeholder="Teléfono (sin + ni espacios)">
+    <button onclick="agregarPersona()">Añadir</button>
+  </div>
+
+  <div id="listaUsuarios"></div>
+
+</div>  <!-- 👈 cerrar AQUÍ -->
+ 
+
+ 
+
 
  
 <script type="module" src="./js/app.js"></script>

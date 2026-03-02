@@ -384,3 +384,34 @@ color: #5d4037;
   box-shadow: 0 6px 14px rgba(0,0,0,0.25);
   outline: 3px solid rgba(255,255,255,0.6);
 }
+.pantalla {
+  display: none;
+}
+
+.pantalla.activa {
+  display: block;
+}
+.grupo-chips {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.grupo-chip {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.grupo-chip:hover {
+  transform: translateY(-2px);
+  background: #e5e7eb;
+}
+
+.grupo-chip.activo {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}

@@ -104,35 +104,67 @@ let grupoActivo = localStorage.getItem("grupoActivo") || "general";
 function getDocRef() {
   return doc(db, "grupos", grupoActivo);
 }
+function colorGrupo(id) {
+  if (id === "general") return "#2e7d32";          // verde café
+  if (id === "Viernes Oficial") return "#f59e0b";  // dorado cerveza
+  if (id === "Torreznos") return "#b91c1c";        // rojo torrezno
+  return "#374151"; // color por defecto
+}
 
 async function cargarListaGrupos() {
   const snap = await getDocs(collection(db, "grupos"));
-  const selector = document.getElementById("selectorGrupo");
+  const ordenDeseado = ["general", "Viernes Oficial", "Torreznos"];
 
-  if (!selector) return;
+const docsOrdenados = snap.docs.sort((a, b) => {
+  return ordenDeseado.indexOf(a.id) - ordenDeseado.indexOf(b.id);
+});
+  const container = document.getElementById("selectorGrupoChips");
 
-  selector.innerHTML = "";
+  if (!container) return;
 
-  snap.forEach(docSnap => {
-    const option = document.createElement("option");
-    const data = docSnap.data();    
-    option.value = docSnap.id;
-    option.textContent = `${data.emoji || "📁"} ${data.nombreVisible || docSnap.id}`;
+  container.innerHTML = "";
 
-    selector.appendChild(option);
+    docsOrdenados.forEach(docSnap => {
+    const data = docSnap.data();
+    const id = docSnap.id;
+
+    const chip = document.createElement("div");
+    chip.className = "grupo-chip";
+    chip.textContent = `${data.emoji || "📁"} ${data.nombreVisible || id}`;
+
+    if (id === grupoActivo) {
+      chip.classList.add("activo");
+      chip.style.background = colorGrupo(id);
+      chip.style.color = "white";
+    }
+
+    chip.onclick = () => cambiarGrupo(id);
+
+    container.appendChild(chip);
   });
-
-  // 👇 ESTO VA DENTRO DE LA FUNCIÓN, pero FUERA del forEach
-  if (selector.options.length === 0) {
-    const option = document.createElement("option");
-    option.value = "general";
-    option.textContent = "☕ Grupo Cafés";
-    selector.appendChild(option);
-  }
-
-  selector.value = grupoActivo;
 }
+async function cambiarGrupo(id) {
 
+  if (id === grupoActivo) return; // no hacer nada si ya está activo
+
+  const loading = document.getElementById("loading");
+  if (loading) loading.style.display = "block";
+
+  // 🔄 Cambiar grupo
+  grupoActivo = id;
+  localStorage.setItem("grupoActivo", grupoActivo);
+
+  // 🔒 Bloquear edición al cambiar
+  bloquearEdicion();
+
+  // 🔄 Recargar datos
+  cargar();
+
+  // 🔄 Volver a pintar chips activos
+  await cargarListaGrupos();
+
+  if (loading) loading.style.display = "none";
+} 
 
 // ➕ Crear nuevo grupo
 window.crearGrupo = async () => {
@@ -191,34 +223,6 @@ window.borrarGrupo = async () => {
   cargar();   // 🔥 sin await
 };
 
-// 🔄 Cambio de grupo desde selector
-document.addEventListener("change", async (e) => {
-  if (e.target.id === "selectorGrupo") {
-
-    if (!edicionActiva) {
-      alert("Debes desbloquear la edición con el PIN");
-      e.target.value = grupoActivo;
-      return;
-    }
-
-    // 🔒 Bloqueamos edición inmediatamente
-    bloquearEdicion();
-
-    const loading = document.getElementById("loading");
-    if (loading) loading.style.display = "block";
-
-    grupoActivo = e.target.value;
-    localStorage.setItem("grupoActivo", grupoActivo);
-
-    // 🧹 Limpiar estado visual
-   
-
-    cargar();   // 🔥 sin await
-    // ❌ quitar render()
-
-    if (loading) loading.style.display = "none";
-  }
-});
 
    
 
@@ -689,7 +693,7 @@ window.compartirSoloLectura = () => {
   }
 };
 function render(){
-  
+ const totalRestante = document.getElementById("heroMensaje");
  const sitiosContainer = document.getElementById("sitiosContainer");
 
 if (sitiosContainer) {
@@ -811,7 +815,31 @@ if (btnLimpiar) {
 }
 
 // ===== Navegación entre pantallas =====
+function renderUsuarios() {
 
+  const cont = document.getElementById("listaUsuarios");
+  if (!cont) return;
+
+  cont.innerHTML = personas.map(p => `
+    <div style="margin-bottom:10px; padding:10px; border-bottom:1px solid #ddd;">
+      <strong>${p.nombre}</strong><br>
+
+      📞 Teléfono:
+      <input 
+        value="${p.telefono || ""}"
+        onchange="actualizarTelefono(${p.id}, this.value)"
+        style="padding:4px; border-radius:6px; border:1px solid #ccc; margin-top:4px;"
+      >
+
+      <br><br>
+
+     // <button onclick="eliminarPersona(${p.id})"
+      //  style="background:#e53935; color:white; border:none; padding:6px 12px; border-radius:8px;">
+      //  🗑 Eliminar
+      </button>
+    </div>
+  `).join("");
+}
 window.abrirGestionGastos = function() {
   const principal = document.getElementById("pantallaPrincipal");
   const gastos = document.getElementById("pantallaGastos");
@@ -823,15 +851,48 @@ window.abrirGestionGastos = function() {
   if (form) form.focus();
 }, 200);
 };
-
+window.abrirGestionUsuarios = function() {
+  document.getElementById("pantallaPrincipal").style.display = "none";
+  document.getElementById("pantallaUsuarios").style.display = "block";
+  renderUsuarios();
+};
 window.volverPrincipal = function() {
+
   const principal = document.getElementById("pantallaPrincipal");
+  const usuarios = document.getElementById("pantallaUsuarios");
   const gastos = document.getElementById("pantallaGastos");
 
+  if (usuarios) usuarios.style.display = "none";
   if (gastos) gastos.style.display = "none";
   if (principal) principal.style.display = "block";
-};
 
+  // 🔥 Forzar estado visual correcto
+  if (!edicionActiva) {
+    document.querySelectorAll(".editable")
+      .forEach(e => e.classList.add("hidden"));
+  }
+
+  render();
+};
+window.actualizarNombresGrupos = async function () {
+
+  await setDoc(doc(db, "grupos", "general"), {
+    nombreVisible: "Cafés Semanal",
+    emoji: "☕"
+  }, { merge: true });
+
+  await setDoc(doc(db, "grupos", "viernes oficial"), {
+    nombreVisible: "Cervezas del Viernes",
+    emoji: "🍺"
+  }, { merge: true });
+
+  await setDoc(doc(db, "grupos", "torreznos"), {
+    nombreVisible: "Torreznos",
+    emoji: "🥓"
+  }, { merge: true });
+
+  console.log("✅ Grupos actualizados correctamente");
+};
   const gastoPersona={};
   personas.forEach(p=>gastoPersona[p.id]=0);
   gastos.forEach(g=>g.participantes.forEach(id=>gastoPersona[id]+=g.monto/g.participantes.length));
@@ -973,7 +1034,7 @@ if (estadoActual !== estadoAnterior) {
   estadoAnterior = estadoActual;
 }
 
-
+if (totalRestante) {
 
 totalRestante.classList.add("frase-animada");
 
@@ -987,7 +1048,8 @@ setTimeout(() => {
   totalRestante.style.background = "rgba(76,175,80,0.08)";
 }
   totalRestante.classList.remove("frase-animada");
-}, 150);
+}, 200);
+}
 console.log("TOTAL REAL:", total);
 const infoGrupoHTML = `
   <div style="font-size:13px; opacity:0.8; margin-bottom:10px;">
