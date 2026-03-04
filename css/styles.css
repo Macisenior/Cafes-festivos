@@ -118,7 +118,7 @@ button:active {
 }
 .estado-badge {
   display: inline-block;
- background: #fff176;
+ background: #768bff;
 color: #5d4037;
   padding: 6px 14px;
   border-radius: 20px;
@@ -153,7 +153,7 @@ color: #5d4037;
   font-size: 16px;
   padding: 18px;
   margin: 10px 0;
- background: #f1f8f4;
+ background: #f8f5f1;
   border: 1px solid rgba(76,175,80,0.15);
   transition: all 0.3s ease;
 }
@@ -179,13 +179,13 @@ color: #5d4037;
 }
 
 .hero-group {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: 1px;
 }
 
 .hero-fixed-date {
-  font-size: 13px;
+  font-size: 25px;
   opacity: 0.8;
 }
 
@@ -204,9 +204,9 @@ color: #5d4037;
 }
 
 .fecha-listado {
-  font-size: 15px;          /* antes sería 12px aprox */
+            /* antes sería 12px aprox */
   font-weight: 600;
-  color: #2563eb;           /* azul elegante */
+  color: #114ebe;           /* azul elegante */
   display: flex;
   align-items: center;
   gap: 6px;
@@ -237,7 +237,7 @@ color: #5d4037;
 }
 
 .fecha-listado {
-  font-size: 13px;
+  font-size: 25px;
   opacity: 0.7;
   font-weight: 500;
 }

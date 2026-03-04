@@ -1112,7 +1112,7 @@ if (heroInfo) {
     options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
   });
 
- const sitios = {};
+const sitios = {};
 
 gastos.forEach(g => {
   if (!sitios[g.sitio]) {
@@ -1120,13 +1120,38 @@ gastos.forEach(g => {
   }
   sitios[g.sitio] += g.monto;
 });
-  gastos.forEach(g=>sitios[g.sitio]+=g.monto);
-  if(chartSitios) chartSitios.destroy();
-  chartSitios=new Chart(graficoSitios,{
-    type:"doughnut",
-    data:{labels:Object.keys(sitios),datasets:[{data:Object.values(sitios),backgroundColor:["#4CAF50","#2196F3","#FF9800"]}]},
-    options:{plugins:{legend:{position:"bottom"}}}
-  });
+
+if(chartSitios) chartSitios.destroy();
+
+chartSitios = new Chart(graficoSitios,{
+  type:"doughnut",
+  data:{
+    labels:Object.keys(sitios),
+    datasets:[{
+      data:Object.values(sitios),
+      backgroundColor:["#4CAF50","#2196F3","#FF9800"]
+    }]
+  },
+ options:{
+  plugins:{
+    legend:{position:"bottom"},
+    tooltip:{
+      callbacks:{
+        label:function(context){
+
+         const valor = Number(context.raw.toFixed(2));
+          const data = context.dataset.data;
+
+          const total = data.reduce((a,b)=>a+b,0);
+          const porcentaje = ((valor/total)*100).toFixed(0);
+
+          return ` ${valor} € (${porcentaje}%)`;
+        }
+      }
+    }
+  }
+}
+});
 }
 window.generarPDF = () => {
   const { jsPDF } = window.jspdf;
