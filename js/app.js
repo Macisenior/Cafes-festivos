@@ -14,6 +14,276 @@ import {
   onSnapshot
 } from "./firebase.js";
 console.log("APP JS CARGADO");
+import { subirTicket } from "./tickets.js";
+function render() {
+
+  const totalRestante = document.getElementById("heroMensaje");
+  const heroBalance = document.getElementById("heroBalance");
+  const sitiosContainer = document.getElementById("sitiosContainer");
+  const checkboxPersonas = document.getElementById("checkboxPersonas");
+  const personaEfectivo = document.getElementById("personaEfectivo");
+  const heroInfo = document.getElementById("heroInfo");
+
+  // ===== HERO FRASE =====
+  if (totalRestante) {
+    totalRestante.classList.add("frase-animada");
+
+    setTimeout(() => {
+      totalRestante.innerHTML = fraseActual;
+
+      if (estadoActual === "negativo") {
+        totalRestante.style.background = "rgba(229,57,53,0.08)";
+      } else if (estadoActual === "bajo") {
+        totalRestante.style.background = "rgba(255,193,7,0.12)";
+      } else {
+        totalRestante.style.background = "rgba(76,175,80,0.08)";
+      }
+
+      totalRestante.classList.remove("frase-animada");
+    }, 200);
+  }
+
+  // ===== SITIOS =====
+  if (sitiosContainer) {
+    sitiosContainer.innerHTML = "";
+
+    listaSitios.forEach((s, i) => {
+      sitiosContainer.innerHTML += `
+        <button 
+          class="sitio-chip ${i === 0 ? "activo" : ""}" 
+          data-sitio="${s.nombre}"
+          style="background:${s.color}">
+          ${s.nombre}
+        </button>
+      `;
+    });
+
+    document.querySelectorAll(".sitio-chip").forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll(".sitio-chip")
+          .forEach(b => b.classList.remove("activo"));
+        btn.classList.add("activo");
+      };
+    });
+  }
+
+  // ===== PERSONAS =====
+  if (checkboxPersonas && personaEfectivo) {
+    checkboxPersonas.innerHTML = "";
+    personaEfectivo.innerHTML = "";
+
+    personas.forEach(p => {
+      checkboxPersonas.innerHTML += `
+        <label class="persona-chip">
+          <input type="checkbox" value="${p.id}">
+          <span>${p.nombre}</span>
+        </label>
+      `;
+
+      personaEfectivo.innerHTML += `
+        <option value="${p.id}">${p.nombre}</option>
+      `;
+    });
+  }
+
+  // ===== CÁLCULOS =====
+  const gastoPersona = {};
+  personas.forEach(p => gastoPersona[p.id] = 0);
+
+  gastos.forEach(g => {
+    g.participantes.forEach(id => {
+      gastoPersona[id] += g.monto / g.participantes.length;
+    });
+  });
+
+  const total =
+    personas.reduce((s, p) => s + p.aportado, 0) -
+    gastos.reduce((s, g) => s + g.monto, 0);
+
+  // ===== ESTADO =====
+  let estadoActual;
+  if (total < 0) estadoActual = "negativo";
+  else if (total <= 20) estadoActual = "bajo";
+  else estadoActual = "positivo";
+
+  if (estadoActual !== estadoAnterior) {
+    if (estadoActual === "negativo") {
+      fraseActual = frasesNegativas[Math.floor(Math.random() * frasesNegativas.length)];
+    } else if (estadoActual === "bajo") {
+      fraseActual = frasesBajo[Math.floor(Math.random() * frasesBajo.length)];
+    } else {
+      fraseActual = frasesPositivas[Math.floor(Math.random() * frasesPositivas.length)];
+    }
+    estadoAnterior = estadoActual;
+  }
+
+  // ===== HERO BALANCE =====
+  if (heroBalance) {
+    heroBalance.textContent = total.toFixed(2) + " €";
+   
+  }
+
+  // ===== HERO INFO =====
+  if (heroInfo) {
+    heroInfo.innerHTML = `
+      <span>📁 ${grupoActivo}</span>
+      <span>🕒 ${tiempoDesde(
+        ultimaActualizacion ? new Date(ultimaActualizacion) : null
+      )}</span>
+    `;
+  }
+
+  // ===== QUIÉN DEBE + WHATSAPP =====
+  quienDebe.innerHTML = personas.map(p => {
+    let bal = p.aportado - gastoPersona[p.id];
+    if (bal > -0.01 && bal < 0.01) bal = 0;
+
+    let color = "";
+    let texto = "";
+
+    if (bal < 0) {
+      color = "#ef4444";
+      texto = `${p.nombre} debe ${(-bal).toFixed(2)} €`;
+    } else if (bal > 0) {
+      color = "#22c55e";
+      texto = `${p.nombre} dispone de ${bal.toFixed(2)} €`;
+    } else {
+      color = "#a78bfa";
+      texto = `${p.nombre} equilibrado`;
+    }
+
+    // ✅ WHATSAPP ACTIVO
+    if (bal < 0 && p.telefono) {
+      const mensaje = encodeURIComponent(
+        `Ey ${p.nombre} 😄 Te quedan ${(-bal).toFixed(2)} € pendientes en el grupo. ¡Invita a algo! 🍻`
+      );
+
+      const enlace = `https://wa.me/${p.telefono}?text=${mensaje}`;
+
+      texto += `
+        <a href="${enlace}" target="_blank"
+           style="margin-left:8px; background:#25D366; color:white; padding:3px 6px; border-radius:6px;">
+           📱 Avisar
+        </a>
+      `;
+    }
+
+    return `
+      <div class="estado-linea">
+        <span class="estado-dot" style="background:${color}"></span>
+        <span>${texto}</span>
+      </div>
+    `;
+  }).join("<br>");
+// ===== RESUMEN PERSONAS =====
+const resumenPersonas = document.getElementById("resumenPersonas");
+
+if (resumenPersonas) {
+  const gastoPersona = {};
+  personas.forEach(p => gastoPersona[p.id] = 0);
+
+  gastos.forEach(g => {
+    g.participantes.forEach(id => {
+      gastoPersona[id] += g.monto / g.participantes.length;
+    });
+  });
+
+  resumenPersonas.innerHTML = personas.map(p => `
+    <strong>${p.nombre}</strong><br>
+    Aportado: ${p.aportado.toFixed(2)} €<br>
+    Gastado: ${gastoPersona[p.id].toFixed(2)} €<br><br>
+  `).join("");
+}
+
+// ===== LISTA GASTOS =====
+const listaGastos = document.getElementById("listaGastos");
+
+if (listaGastos) {
+ listaGastos.innerHTML = gastos.map(g => `
+  <div class="gasto-item">
+
+  <div class="gasto-top">
+  <span class="gasto-desc">${g.sitio}</span>
+  <span class="gasto-monto">${g.monto.toFixed(2)} €</span>
+</div>
+
+    <div class="gasto-meta">
+      📅 ${g.fecha} · 
+      👥 ${g.participantes.map(id => {
+        const p = personas.find(x => x.id === id);
+        return p ? p.nombre : "";
+      }).join(", ")}
+    </div>
+
+    ${g.ticket ? `
+      <img src="${g.ticket}" class="gasto-img"
+      onclick="window.open('${g.ticket}', '_blank')">
+    ` : ""}
+
+    <button class="btn-eliminar-mini" onclick="eliminarGasto('${g.id}')">
+  ✕
+</button>
+
+  </div>
+`).join("");
+}
+
+// ===== GRÁFICO PERSONAS =====
+if (typeof Chart !== "undefined" && document.getElementById("graficoPersonas")) {
+  if (chartPersonas) chartPersonas.destroy();
+
+  const gastoPersona = {};
+  personas.forEach(p => gastoPersona[p.id] = 0);
+
+  gastos.forEach(g => {
+    g.participantes.forEach(id => {
+      gastoPersona[id] += g.monto / g.participantes.length;
+    });
+  });
+
+  chartPersonas = new Chart(graficoPersonas, {
+    type: "bar",
+    data: {
+      labels: personas.map(p => p.nombre),
+      datasets: [
+        { label: "Aportado", data: personas.map(p => p.aportado) },
+        { label: "Gastado", data: personas.map(p => gastoPersona[p.id]) }
+      ]
+    }
+  });
+}
+
+// ===== GRÁFICO SITIOS =====
+if (typeof Chart !== "undefined" && document.getElementById("graficoSitios")) {
+  if (chartSitios) chartSitios.destroy();
+
+  const sitios = {};
+  gastos.forEach(g => {
+    sitios[g.sitio] = (sitios[g.sitio] || 0) + g.monto;
+  });
+
+  chartSitios = new Chart(graficoSitios, {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(sitios),
+      datasets: [{ data: Object.values(sitios) }]
+    }
+  });
+}
+// 📅 Fecha del listado
+const fechaListado = document.getElementById("fechaListado");
+
+if (fechaListado) {
+  if (ultimaActualizacion) {
+    fechaListado.textContent =
+      "📅 " + new Date(ultimaActualizacion).toLocaleDateString();
+  } else {
+    fechaListado.textContent = "📅 —";
+  }
+}
+
+  console.log("RENDER OK", { personas, gastos });
+}
   // 🎭 FRASES DINÁMICAS
 
 const frasesPositivas = [
@@ -361,13 +631,21 @@ function cargar(){
       gastos = d.gastos || [];
       pinGuardado = d.pin || null;
 
-      ultimaActualizacion =
-        d.ultimaActualizacion?.toDate?.() ||
-        d.ultimaActualizacion ||
-        null;
+   if (d.ultimaActualizacion) {
+  if (typeof d.ultimaActualizacion.toDate === "function") {
+    ultimaActualizacion = d.ultimaActualizacion.toDate();
+  } else if (d.ultimaActualizacion.seconds) {
+    // 🔥 caso Firebase Timestamp serializado
+    ultimaActualizacion = new Date(d.ultimaActualizacion.seconds * 1000);
+  } else {
+    ultimaActualizacion = new Date(d.ultimaActualizacion);
+  }
+} else {
+  ultimaActualizacion = null;
+}
      
     } 
- render();
+render();
    
   });
 }
@@ -409,6 +687,7 @@ async function guardar() {
   }
 
   try {
+  console.log("📦 ENVIANDO A FIRESTORE");  
   await setDoc(
   getDocRef(),
   {
@@ -549,7 +828,7 @@ window.añadirEfectivo = async () => {
   const p = personas.find(p => p.id == personaEfectivo.value);
   const amount = +efectivoExtra.value;
   const date = cashDate.value;
-
+console.log("➕ Añadiendo efectivo");
   if (!p || !amount || !date) {
     alert("Faltan datos");
     return;
@@ -590,64 +869,69 @@ window.eliminarGasto = async function(id) {
 };
 window.agregarGasto = async () => {
 
-  // Participantes seleccionados
-  const part = [...document.querySelectorAll("#checkboxPersonas input:checked")]
-    .map(c => +c.value);
+ // Participantes seleccionados
+const inputFoto = document.getElementById("fotoTicket");
+const file = inputFoto?.files[0];
 
-  if (part.length === 0) {
-    alert("Selecciona al menos un participante");
-    return;
-  }
+const part = [...document.querySelectorAll("#checkboxPersonas input:checked")]
+  .map(c => +c.value);
 
-  // Sitio seleccionado
-  const btnActivo = document.querySelector(".sitio-chip.activo");
-  const sitioSeleccionado = btnActivo ? btnActivo.dataset.sitio : null;
+if (part.length === 0) {
+  alert("Selecciona al menos un participante");
+  return;
+}
 
-  if (!sitioSeleccionado) {
-    alert("Selecciona un sitio");
-    return;
-  }
+// Sitio seleccionado
+const btnActivo = document.querySelector(".sitio-chip.activo");
+const sitioSeleccionado = btnActivo ? btnActivo.dataset.sitio : null;
 
-  // Datos básicos
-  const descripcion = descripcionGasto.value.trim();
-  const monto = +montoGasto.value;
-  const fecha = fechaGasto.value
-    ? new Date(fechaGasto.value).toLocaleDateString()
-    : new Date().toLocaleDateString();
+if (!sitioSeleccionado) {
+  alert("Selecciona un sitio");
+  return;
+}
 
-  if (!monto || monto <= 0) {
-    alert("Introduce un importe válido");
-    return;
-  }
+// Datos básicos
+const descripcion = descripcionGasto.value.trim();
+const monto = +montoGasto.value;
+const fecha = fechaGasto.value
+  ? new Date(fechaGasto.value).toLocaleDateString()
+  : new Date().toLocaleDateString();
 
-  // Crear gasto
-  gastos.push({
-    id: Date.now(),
-    sitio: sitioSeleccionado,
-    descripcion: descripcion || "cafes",
-    monto,
-    participantes: part,
-    fecha
-  });
+if (!monto || monto <= 0) {
+  alert("Introduce un importe válido");
+  return;
+}
 
-  // Guardar
-  await guardar();
-  render();
+const ticketURL = await subirTicket(file, grupoActivo);
+// ✅ Crear gasto (AQUÍ SOLO DATOS)
+gastos.push({
+  id: Date.now(),
+  sitio: sitioSeleccionado,
+  descripcion: descripcion || "cafes",
+  monto,
+  participantes: part,
+  fecha,
+  ticket: ticketURL || null
+});
 
-  // 🔄 Reset inteligente
-  montoGasto.value = "";
-  descripcionGasto.value = "cafes";
+// Guardar
+await guardar();
+render();
 
-  const hoy = new Date().toISOString().split("T")[0];
-  fechaGasto.value = hoy;
+// 🧹 LIMPIAR (FUERA del objeto)
+montoGasto.value = "";
+descripcionGasto.value = "cafes";
 
-  document.querySelectorAll("#checkboxPersonas input")
-    .forEach(cb => cb.checked = false);
+const hoy = new Date().toISOString().split("T")[0];
+fechaGasto.value = hoy;
 
-  // Reset sitio al primero
-  document.querySelectorAll(".sitio-chip")
-    .forEach((b, i) => b.classList.toggle("activo", i === 0));
-};
+document.querySelectorAll("#checkboxPersonas input")
+  .forEach(cb => cb.checked = false);
+
+// limpiar foto 👇
+if (inputFoto) inputFoto.value = "";
+
+  
 
 
 
@@ -692,23 +976,7 @@ window.compartirSoloLectura = () => {
     alert("Enlace copiado al portapapeles");
   }
 };
-function render(){
- const totalRestante = document.getElementById("heroMensaje");
- const sitiosContainer = document.getElementById("sitiosContainer");
 
-if (sitiosContainer) {
-  sitiosContainer.innerHTML = "";
-
- listaSitios.forEach((s, i) => {
-  sitiosContainer.innerHTML += `
-    <button 
-      class="sitio-chip ${i === 0 ? "activo" : ""}" 
-      data-sitio="${s.nombre}"
-      style="background:${s.color}">
-      ${s.nombre}
-    </button>
-  `;
-});
 
   // Evento selección
 document.querySelectorAll(".sitio-chip").forEach(btn => {
@@ -776,43 +1044,7 @@ if (heroInfo) {
   </div>
 `;
 }
-checkboxPersonas.innerHTML = "";
-personaEfectivo.innerHTML = "";
 
- {
-  personas.forEach(p => {
-
-    checkboxPersonas.innerHTML += `
-      <label class="persona-chip">
-        <input type="checkbox" value="${p.id}">
-        <span>${p.nombre}</span>
-      </label>
-    `;
-
-    personaEfectivo.innerHTML += `
-      <option value="${p.id}">${p.nombre}</option>
-    `;
-  });
-} 
- 
-const btnTodos = document.getElementById("btnTodos");
-const btnLimpiar = document.getElementById("btnLimpiar");
-
-if (btnTodos) {
-  btnTodos.onclick = () => {
-    checkboxPersonas
-      .querySelectorAll("input[type='checkbox']")
-      .forEach(cb => cb.checked = true);
-  };
-}
-
-if (btnLimpiar) {
-  btnLimpiar.onclick = () => {
-    checkboxPersonas
-      .querySelectorAll("input[type='checkbox']")
-      .forEach(cb => cb.checked = false);
-  };
-}
 
 // ===== Navegación entre pantallas =====
 function renderUsuarios() {
@@ -934,83 +1166,9 @@ resumenPersonas.innerHTML = personas.map(p => {
   `;
 }).join("");
 
-const listaGastos = document.getElementById("listaGastos");
 
-if (listaGastos) {
-  listaGastos.innerHTML = gastos.map(g => `
-    <div style="margin-bottom:8px; padding:6px; border-bottom:1px solid #ddd;">
-      <strong>${g.descripcion}</strong> - ${g.monto.toFixed(2)} €
-      (${g.fecha})<br>
-      👥 ${g.participantes.map(id => {
-        const persona = personas.find(p => p.id === id);
-        return persona ? persona.nombre : "";
-      }).join(", ")}
 
-      ${edicionActiva ? `
-     <button onclick="eliminarGasto('${g.id}')"
-  style="margin-top:6px; background:#e53935; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer;">
-  ❌ Eliminar
-</button>  
-      ` : ""}
-    </div>
-  `).join("");
-}
 
- quienDebe.innerHTML = personas.map(p => {
-
-  var bal = p.aportado - gastoPersona[p.id];
-  if (bal > -0.01 && bal < 0.01) bal = 0;
-
- let color = "";
-let texto = "";
-
-if (bal < -0.01) {
-  color = "#ef4444"; // rojo
-  texto = `${p.nombre} debe ${(-bal).toFixed(2)} €`;
-} else if (bal > 0.01) {
-  color = "#22c55e"; // verde
-  texto = `${p.nombre} dispone de ${bal.toFixed(2)} €`;
-} else {
-  color = "#a78bfa"; // violeta
-  texto = `${p.nombre} equilibrado`;
-}
-
-  // 👉 CAPRICHO WHATSAPP
-  if (bal < 0 && p.telefono) {
-
-const mensaje = encodeURIComponent(
-  `Ey ${p.nombre} 😄 Te quedan ${(-bal).toFixed(2)} € pendientes en el grupo. ¡Invita a algo antes de que te embarguemos el bocata! 🥪💸`
-);
-
-    const enlace = `https://wa.me/${p.telefono}?text=${mensaje}`;
-
-    texto += `
-      <a href="${enlace}" target="_blank"
-         style="margin-left:8px; background:#25D366; color:white; padding:3px 6px; border-radius:6px; text-decoration:none;">
-         📱 Avisar
-      </a>
-    `;
-  }
-
- return `
-  <div class="estado-linea">
-    <span class="estado-dot" style="background:${color}"></span>
-    <span>${texto}</span>
-  </div>
-`;
-
-}).join("<br>");
-// 📅 Fecha del listado
-const fechaListado = document.getElementById("fechaListado");
-
-if (fechaListado) {
-  if (ultimaActualizacion) {
-    fechaListado.textContent =
-      "📅 " + new Date(ultimaActualizacion).toLocaleDateString();
-  } else {
-    fechaListado.textContent = "📅 —";
-  }
-}
 
   const total=personas.reduce((s,p)=>s+p.aportado,0)-gastos.reduce((s,g)=>s+g.monto,0);
  let estadoActual;
@@ -1034,22 +1192,7 @@ if (estadoActual !== estadoAnterior) {
   estadoAnterior = estadoActual;
 }
 
-if (totalRestante) {
 
-totalRestante.classList.add("frase-animada");
-
-setTimeout(() => {
-  totalRestante.innerHTML = fraseActual;
-  if (estadoActual === "negativo") {
-  totalRestante.style.background = "rgba(229,57,53,0.08)";
-} else if (estadoActual === "bajo") {
-  totalRestante.style.background = "rgba(255,193,7,0.12)";
-} else {
-  totalRestante.style.background = "rgba(76,175,80,0.08)";
-}
-  totalRestante.classList.remove("frase-animada");
-}, 200);
-}
 console.log("TOTAL REAL:", total);
 const infoGrupoHTML = `
   <div style="font-size:13px; opacity:0.8; margin-bottom:10px;">
@@ -1064,53 +1207,92 @@ document.getElementById("heroBalance").textContent =
   total.toFixed(2) + " €";
 
 // Color dinámico
+// ===== HERO DINÁMICO (CORREGIDO) =====
 const heroBox = document.querySelector(".hero-balance");
 
-if (total < 0) {
-const heroInfo = document.getElementById("heroInfo");
+const heroMensaje = document.getElementById("heroMensaje");
+const heroBalance = document.getElementById("heroBalance");
 
+// 👉 INFO (siempre se pinta igual, fuera del if)
 if (heroInfo) {
   heroInfo.innerHTML = `
     <span>📁 Grupo: <strong>${grupoActivo}</strong></span>
-    <span>🕒 Actualizado: <strong>${tiempoDesde(
+    <span>🕒 ${tiempoDesde(
       ultimaActualizacion ? new Date(ultimaActualizacion) : null
-    )}</strong></span>
+    )}</span>
   `;
-} 
-
-  heroBox.style.background =
-    "linear-gradient(135deg, #e53935, #b71c1c)";
-  document.getElementById("heroMensaje").textContent =
-    "⚠️ Aquí alguien tiene que invitar a algo...";
-} else if (total === 0) {
-  heroBox.style.background =
-    "linear-gradient(135deg, #2196F3, #1565C0)";
-  document.getElementById("heroMensaje").textContent =
-    "🍻 Grupo perfectamente equilibrado.";
-} else {
-  heroBox.style.background =
-   "linear-gradient(135deg, #a5d6a7, #66bb6a)";
- document.getElementById("heroMensaje").innerHTML =
-  '<span class="estado-badge">😎 Fondo positivo</span>' +
-  '<span class="subtexto">Todo bajo control.</span>';
 }
-  totalRestante.style.color=total<0?"#e53935":"#2e7d32";
-  totalRestante.style.fontWeight = "bold";
-  totalRestante.style.textDecoration = "underline";
-  totalRestante.style.textAlign = "center";
-  totalRestante.style.fontSize = "20px";
-  if(chartPersonas) chartPersonas.destroy();
-  chartPersonas=new Chart(graficoPersonas,{
-    type:"bar",
-    data:{
-      labels:personas.map(p=>p.nombre),
-      datasets:[
-        {label:"Aportado",data:personas.map(p=>p.aportado),backgroundColor:"#4CAF50"},
-        {label:"Gastado",data:personas.map(p=>gastoPersona[p.id]),backgroundColor:"#e53935"}
+
+// 👉 COLOR + MENSAJE
+if (heroBox && heroMensaje) {
+
+  heroBox.classList.remove("hero-positivo", "hero-negativo", "hero-cero");
+
+  if (total < 0) {
+
+    heroBox.classList.add("hero-negativo");
+
+    heroMensaje.textContent =
+      "⚠️ Aquí alguien tiene que invitar a algo...";
+
+  } else if (total === 0) {
+
+    heroBox.classList.add("hero-cero");
+
+    heroMensaje.textContent =
+      "🍻 Grupo perfectamente equilibrado.";
+
+  } else {
+
+    heroBox.classList.add("hero-positivo");
+
+    heroMensaje.innerHTML =
+      '<span class="estado-badge">😎 Fondo positivo</span>' +
+      '<span class="subtexto">Todo bajo control.</span>';
+  }
+}
+
+// 👉 BALANCE (SIN DUPLICAR VARIABLES)
+if (heroBalance) {
+  heroBalance.textContent = total.toFixed(2) + " €";
+ heroBalance.style.color =
+  total < 0 ? "#b71c1c" :
+  total === 0 ? "#555" :
+  "#1b5e20";
+  heroBalance.style.fontWeight = "bold";
+  heroBalance.style.textDecoration = "none";
+  heroBalance.style.textAlign = "center";
+  heroBalance.style.fontSize = "36px";
+}
+
+// ===== GRÁFICO PERSONAS (SEGURO) =====
+if (typeof Chart !== "undefined" && graficoPersonas) {
+
+  if (chartPersonas) chartPersonas.destroy();
+
+  chartPersonas = new Chart(graficoPersonas, {
+    type: "bar",
+    data: {
+      labels: personas.map(p => p.nombre),
+      datasets: [
+        {
+          label: "Aportado",
+          data: personas.map(p => p.aportado),
+          backgroundColor: "#4CAF50"
+        },
+        {
+          label: "Gastado",
+          data: personas.map(p => gastoPersona[p.id]),
+          backgroundColor: "#e53935"
+        }
       ]
     },
-    options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
+    options: {
+      plugins: { legend: { position: "bottom" } },
+      scales: { y: { beginAtZero: true } }
+    }
   });
+}
 
 const sitios = {};
 
@@ -1152,7 +1334,7 @@ chartSitios = new Chart(graficoSitios,{
   }
 }
 });
-}
+
 window.generarPDF = () => {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
@@ -1168,10 +1350,11 @@ window.generarPDF = () => {
   y += 10;
 
   pdf.setFontSize(14);
- const totalTexto = totalRestante.innerText
-  .replace("€", " EUR")
-  .replace("💰", "");
-   pdf.text(totalTexto, 10, y);
+ const total = gastos.reduce((sum, g) => sum + g.monto, 0);
+
+const totalTexto = total.toFixed(2) + " EUR";
+
+pdf.text(totalTexto, 10, y);
   y += 12;
 
   // === TABLA PERSONAS ===
@@ -1582,6 +1765,5 @@ y += 10;
 
   pdf.save("resumen_gastos_1_pagina.pdf");
 };
-
 
 

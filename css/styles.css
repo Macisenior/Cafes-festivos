@@ -78,21 +78,20 @@ button:active {
 /* ===== HERO BALANCE ===== */
 
 .hero-balance {
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  color: #1b5e20;
-  padding: 35px;
-  border-radius: 20px;
+  
+  background: #cae982;
+  color: #1410df;
+   padding: 40px 20px; /* más alto */
+  border-radius: 22px;
   text-align: center;
-  margin: 20px 0 30px 0;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-  border: 2px solid #c8e6c9;
+ margin: 20px 0 30px;
+   box-shadow: 0 15px 35px rgba(0,0,0,0.12);
   transition: all 0.3s ease;
 }
-
 .hero-balance h2 {
   font-size: 14px;
-  opacity: 0.8;
-  margin-bottom: 10px;
+  opacity: 0.85;
+  margin-bottom: 8px;
 }
 
 .hero-balance p {
@@ -118,14 +117,15 @@ button:active {
 }
 .estado-badge {
   display: inline-block;
- background: #768bff;
-color: #5d4037;
+  background: rgba(255,255,255,0.2);
+ color: white;
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 6px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+   backdrop-filter: blur(6px);
 }
 
 .subtexto {
@@ -192,7 +192,7 @@ color: #5d4037;
 .hero-update {
   margin-top: 12px;
   font-size: 13px;
-  opacity: 0.9;
+  opacity: 0.85;
 }
 #estadoCard {
   margin-top: 12px;
@@ -414,4 +414,112 @@ color: #5d4037;
 
 .grupo-chip.activo {
   box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+.btn-eliminar {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #e53935;
+  color: white;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.gasto-item {
+  background: white;
+  padding: 10px 12px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  position: relative;
+   padding-top: 28px; /* espacio para título */
+}
+
+.gasto-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+}
+
+.gasto-desc {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 600;
+}
+
+.gasto-monto {
+  position: absolute;
+  right: 40px; /* clave */
+  top: 10px;
+  font-weight: bold;
+  color: #2e7d32;
+}
+
+.gasto-meta {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.gasto-img {
+  width: 50px;
+  margin-top: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-eliminar-mini {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: rgba(229,57,53,0.1);
+  border: none;
+  color: #e53935;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-eliminar-mini:hover {
+  background: #e53935;
+  color: white;
+}
+.hero-positivo {
+  background: linear-gradient(135deg, #66bb6a, #43a047);
+  color: white;
+}
+
+.hero-negativo {
+  background: linear-gradient(135deg, #ef5350, #c62828);
+  color: white;
+}
+
+
+
+
+#heroBalance {
+  font-size: 52px;   /* 🔥 clave */
+  font-weight: 800;
+  margin: 10px 0;
+  letter-spacing: 1px;
+}
+.hero-balance {
+  animation: aparecer 0.4s ease;
+}
+
+@keyframes aparecer {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
