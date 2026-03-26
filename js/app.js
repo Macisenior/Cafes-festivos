@@ -1003,6 +1003,24 @@ if (fechaInput && !fechaInput.value) {
   fechaInput.value = hoy;
 }
 const descripcionInput = document.getElementById("descripcionGasto");
+const btnTodos = document.getElementById("btnTodos");
+const btnLimpiar = document.getElementById("btnLimpiar");
+
+if (btnTodos && btnLimpiar) {
+
+  btnTodos.onclick = () => {
+    document.querySelectorAll("#checkboxPersonas input").forEach(c => {
+      c.checked = true;
+    });
+  };
+
+  btnLimpiar.onclick = () => {
+    document.querySelectorAll("#checkboxPersonas input").forEach(c => {
+      c.checked = false;
+    });
+  };
+
+}
 if (descripcionInput && !descripcionInput.value) {
   descripcionInput.value = "cafes";
 }
