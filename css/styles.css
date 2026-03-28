@@ -523,3 +523,69 @@ button:active {
     opacity: 1;
   }
 }
+/* 🔹 CARD RESUMEN */
+.card-resumen {
+  background: #f5c764;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ✨ Hover elegante */
+.card-resumen:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* 🎯 Título */
+.card-resumen h3 {
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #eb0a0a;
+  position: relative;
+}
+
+/* 🔵 línea decorativa */
+.card-resumen h3::after {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 3px;
+  background: linear-gradient(90deg, #6a5cff, #00c6ff);
+  margin-top: 5px;
+  border-radius: 2px;
+}
+
+/* 📄 filas */
+.card-resumen div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 2px 0;
+}
+
+/* 💰 cantidades */
+.card-resumen span:last-child {
+  font-weight: 600;
+  color: #333;
+  transition: transform 0.2s ease;
+}
+
+/* ✨ efecto al pasar */
+.card-resumen:hover span:last-child {
+  transform: scale(1.05);
+}
+
+/* 📊 TOTAL */
+.card-resumen .total {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px solid #eee;
+  font-weight: bold;
+  font-size: 14px;
+  color: #0b0118;
+}

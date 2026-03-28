@@ -13,8 +13,8 @@ import {
   onAuthStateChanged,
   onSnapshot
 } from "./firebase.js";
+import { renderResumen } from "./resumen.js";
 console.log("APP JS CARGADO");
-import { subirTicket } from "./tickets.js";
 function render() {
 
   const totalRestante = document.getElementById("heroMensaje");
@@ -197,9 +197,16 @@ if (resumenPersonas) {
 
 // ===== LISTA GASTOS =====
 const listaGastos = document.getElementById("listaGastos");
+const hoy = new Date();
+const mes = hoy.getMonth();
+const año = hoy.getFullYear();
 
+const gastosVisibles = filtrarPorMes(gastos, mes, año);
 if (listaGastos) {
- listaGastos.innerHTML = gastos.map(g => `
+listaGastos.innerHTML = gastosVisibles
+  .slice()
+  .reverse()
+  .map(g => `
   <div class="gasto-item">
 
   <div class="gasto-top">
@@ -215,10 +222,7 @@ if (listaGastos) {
       }).join(", ")}
     </div>
 
-    ${g.ticket ? `
-      <img src="${g.ticket}" class="gasto-img"
-      onclick="window.open('${g.ticket}', '_blank')">
-    ` : ""}
+  
 
     <button class="btn-eliminar-mini" onclick="eliminarGasto('${g.id}')">
   ✕
@@ -492,10 +496,98 @@ window.borrarGrupo = async () => {
 
   cargar();   // 🔥 sin await
 };
+// 🔹 FUERA de exportarMesPDF
+function filtrarPorMes(gastos, mes, año) {
+  return gastos.filter(g => {
 
+    if (!g.fecha) return false;
 
-   
+    const partes = g.fecha.split("/");
+    if (partes.length !== 3) return false;
 
+    const mesNum = parseInt(partes[1], 10) - 1;
+    const añoNum = parseInt(partes[2], 10);
+
+    return mesNum === mes && añoNum === año;
+  });
+}
+
+// 🔹 EXPORTAR PDF
+window.exportarMesPDF = (mes, año) => {
+
+  const gastosMes = filtrarPorMes(gastos, mes, año);
+  const totalMes = gastosMes.reduce((sum, g) => sum + (g.monto || 0), 0);
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  let y = 10;
+
+  // 🧾 TÍTULO
+  pdf.setFontSize(18);
+  pdf.text(`Gastos ${mes + 1}/${año}`, 10, y);
+  y += 8;
+
+  pdf.setFontSize(12);
+  pdf.text(`Total: ${totalMes.toFixed(2)} €`, 10, y);
+  y += 12;
+
+  // 📋 LISTA
+  gastosMes.forEach(g => {
+
+    pdf.setFontSize(12);
+    pdf.setFont(undefined, "bold");
+    pdf.text(g.sitio || g.descripcion, 10, y);
+
+    pdf.text(`${g.monto.toFixed(2)} €`, 185, y, { align: "right" });
+
+    y += 5;
+
+    pdf.setFontSize(10);
+    pdf.setFont(undefined, "normal");
+
+    const nombres = g.participantes
+      .map(id => {
+        const p = personas.find(x => x.id === id);
+        return p ? p.nombre : "";
+      })
+      .join(", ");
+
+    pdf.text(`${g.fecha} · ${nombres}`, 10, y);
+
+    y += 12;
+
+    pdf.setDrawColor(220);
+    pdf.line(10, y - 3, 200, y - 3);
+
+    // salto de página
+    if (y > 280) {
+      pdf.addPage();
+      y = 10;
+    }
+
+  });
+
+  pdf.save(`gastos_${mes+1}_${año}.pdf`);
+};
+
+// 🔹 EXPORTAR MES ACTUAL
+window.exportarMesActual = () => {
+  const hoy = new Date();
+  exportarMesPDF(hoy.getMonth(), hoy.getFullYear());
+};
+window.exportarMesManual = () => {
+
+  const mes = parseInt(prompt("Mes (1-12):")) - 1;
+  const año = parseInt(prompt("Año (ej: 2026):"));
+
+  if (isNaN(mes) || isNaN(año) || mes < 0 || mes > 11) {
+    alert("Datos incorrectos");
+    return;
+  }
+
+  exportarMesPDF(mes, año);
+};
 // 🔐 Auth anónima
 
 
@@ -519,7 +611,16 @@ window.exportarBackup = () => {
   a.click();
   URL.revokeObjectURL(url);
 };
+window.abrirResumen = () => {
 
+  document.querySelectorAll(".pantalla")
+    .forEach(p => p.classList.remove("activa"));
+
+  document.getElementById("pantallaResumen")
+    .classList.add("activa");
+
+  renderResumen(personas, gastos, aportaciones);
+};
 
  
    window.importarBackup = async () => {
@@ -870,8 +971,6 @@ window.eliminarGasto = async function(id) {
 window.agregarGasto = async () => {
 
  // Participantes seleccionados
-const inputFoto = document.getElementById("fotoTicket");
-const file = inputFoto?.files[0];
 
 const part = [...document.querySelectorAll("#checkboxPersonas input:checked")]
   .map(c => +c.value);
@@ -902,7 +1001,7 @@ if (!monto || monto <= 0) {
   return;
 }
 
-const ticketURL = await subirTicket(file, grupoActivo);
+
 // ✅ Crear gasto (AQUÍ SOLO DATOS)
 gastos.push({
   id: Date.now(),
@@ -910,8 +1009,7 @@ gastos.push({
   descripcion: descripcion || "cafes",
   monto,
   participantes: part,
-  fecha,
-  ticket: ticketURL || null
+  fecha, 
 });
 
 // Guardar

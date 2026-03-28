@@ -89,7 +89,6 @@
     <div id="sitiosContainer" class="sitios-container"></div>
     <input id="fechaGasto" type="date">
     <input id="descripcionGasto">
-<input type="file" id="fotoTicket" accept="image/*">
     <div id="accionesParticipantes">
       <button id="btnTodos" type="button">Todos</button>
       <button id="btnLimpiar" type="button">Limpiar</button>
@@ -137,9 +136,9 @@
 
   <!-- PDF -->
   <div class="card">
-    <button onclick="generarPDF()" style="background: darkviolet;">
-      📄 Descargar PDF PRO
-    </button>
+  <button onclick="abrirResumen()" style="background:#9c27b0;">
+  📊 Resumen PRO
+</button>  
   </div>
 
   <div class="card">
@@ -171,13 +170,38 @@
   </div>
 
 </div> <!-- FIN pantallaPrincipal -->
+<div id="pantallaResumen" class="pantalla">
 
+  <button onclick="volverPrincipal()" 
+    style="background:#444; color:white; margin-bottom:10px;">
+    ← Volver
+  </button>
+
+  <h2>📊 Resumen del grupo</h2>
+
+  <div id="resumenContenido"></div>
+
+</div>
 <!-- PANTALLA GASTOS -->
 <div id="pantallaGastos" class="pantalla">
   <button onclick="volverPrincipal()"
     style="background:#4444441e; color:white; padding:8px 12px; border:none; border-radius:6px; margin-bottom:10px;">
     ← Volver
   </button>
+ <div style="display:flex; gap:8px; margin-bottom:10px;">
+
+  <button onclick="exportarMesActual()" style="background:#4CAF50;">
+    📄 Este mes
+  </button>
+
+  <button onclick="exportarMesManual()" style="background:#2196F3;">
+    📅 Elegir mes
+  </button>
+
+</div>
+
+  
+
   <h2>📋 Gestionar gastos</h2>
   <div id="listaGastos"></div>
 </div>
