@@ -176,9 +176,27 @@
     style="background:#444; color:white; margin-bottom:10px;">
     ← Volver
   </button>
-
+<button onclick="exportarAportacionesAnualPro()">
+  Exportar aportaciones PRO
+</button>
+<button onclick="exportarGastosTotalesPro()">
+  Exportar gastos PRO
+</button>
+<button onclick="exportarResumenFinal()">
+  Exportar resumen final
+</button>
   <h2>📊 Resumen del grupo</h2>
-
+<button id="btnToggleHistorico" style="
+  margin-bottom:10px;
+  padding:8px 12px;
+  border:none;
+  border-radius:8px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+">
+  Ver histórico
+</button>
   <div id="resumenContenido"></div>
 
 </div>

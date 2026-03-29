@@ -1,20 +1,10 @@
+let mostrarHistorico = false;
 export function renderResumen(personas, gastos, aportaciones) {
 
   function formatearFecha(fechaISO) {
-    if (!fechaISO) return "-";
+    if (!fechaISO || fechaISO === "INICIAL") return "Inicio";
     const [año, mes, dia] = fechaISO.split("-");
     return `${dia}/${mes}/${año}`;
-  }
-
-  function convertirFecha(fechaStr) {
-    if (!fechaStr) return new Date(0);
-
-    if (fechaStr.includes("-")) {
-      return new Date(fechaStr);
-    }
-
-    const [dia, mes, año] = fechaStr.split("/");
-    return new Date(`${año}-${mes}-${dia}`);
   }
 
   function calcularResumenReal(personas, gastos, aportaciones) {
@@ -59,67 +49,114 @@ export function renderResumen(personas, gastos, aportaciones) {
 
   const cont = document.getElementById("resumenContenido");
   if (!cont) return;
+const btnToggle = document.getElementById("btnToggleHistorico");
 
-  const resumen = {};
+if (btnToggle) {
+  btnToggle.onclick = () => {
+    mostrarHistorico = !mostrarHistorico;
+    renderResumen(personas, gastos, aportaciones);
+  };
+}
+  cont.innerHTML = personas.map(p => {
 
-personas.forEach(p => {
+    // 🔹 movimientos reales de esta persona
+  
 
-  if (p.aportado && p.aportado > 0) {
+const hoy = new Date();
+const mesActual = hoy.getMonth();
+const añoActual = hoy.getFullYear();
 
-    aportaciones.push({
-      personaId: p.id,
-      nombre: p.nombre,
-      amount: p.aportado,
-      date: p.fechaAlta || "2026-01-01" // o una fecha inicial
-    });
+let movimientos = aportaciones
+  .filter(a => {
 
-  }
+    if (a.personaId !== p.id) return false;
+    if (!a.date) return false;
 
-});
- 
-cont.innerHTML = personas.map(p => {
+    const fecha = new Date(a.date);
 
-  // 🔹 movimientos reales (quitamos el fake 01/01/2026)
-  const movimientos = aportaciones
-    .filter(a => a.personaId === p.id && a.date !== "2026-01-01")
-    .sort((a, b) => {
-      const fa = a.date ? new Date(a.date) : new Date(0);
-      const fb = b.date ? new Date(b.date) : new Date(0);
-      return fa - fb;
-    });
+    if (!mostrarHistorico) {
+      return fecha.getMonth() === mesActual &&
+             fecha.getFullYear() === añoActual;
+    }
 
-  // 🔹 total REAL (incluye todo, también el inicial)
- 
-    const total = p.aportado || 0;
-  // 🔹 filas
-  const filas = movimientos.map(m => `
-    <div style="display:flex; justify-content:space-between; font-size:13px;">
-      <span>${formatearFecha(m.date || "")}</span>
-      <span>+${(m.amount || 0).toFixed(2)} €</span>
-    </div>
-  `).join("");
+    return true;
 
-  return `
-   <div class="card-resumen">
+  })
+  .sort((a, b) => new Date(a.date) - new Date(b.date));
 
-      <h3>${p.nombre}</h3>
+    // 🔹 calcular lo que falta (inicio)
+    const totalHistorial = movimientos.reduce(
+      (sum, m) => sum + (m.amount || 0),
+      0
+    );
 
-      ${filas}
+    const totalReal = p.aportado || 0;
 
-      <div style="
-        margin-top:8px;
-        font-weight:bold;
-        border-top:1px solid #ddd;
-        padding-top:5px;
-      ">
-<div class="total">
-  Total: ${total.toFixed(2)} €
-</div>
-       
+    const inicial = totalReal - totalHistorial;
+
+    // 👉 añadir "inicio" solo si hace falta
+    if (inicial > 0.01) {
+      movimientos = [
+        {
+          date: "INICIAL",
+          amount: inicial
+        },
+        ...movimientos
+      ];
+    }
+
+    // 🔹 total final
+    const total = totalReal;
+
+    // 🔹 filas
+    const filas = movimientos.map(m => {
+
+      const fechaTexto = formatearFecha(m.date);
+
+      return `
+        <div style="display:flex; justify-content:space-between; font-size:13px;">
+          <span>${fechaTexto}</span>
+          <span>+${(m.amount || 0).toFixed(2)} €</span>
+        </div>
+      `;
+    }).join("");
+
+   return `
+  <div class="card-resumen">
+
+    <h3>${p.nombre}</h3>
+
+    ${filas}
+
+    <div style="
+      margin-top:8px;
+      font-weight:bold;
+      border-top:1px solid #ddd;
+      padding-top:5px;
+    ">
+      <div class="total">
+        Total: ${total.toFixed(2)} €
       </div>
-
     </div>
-  `;
 
-}).join("");
+    <!-- 👇 BOTÓN FUERA DEL CONTENEDOR -->
+    <button onclick="enviarWhatsAppPersona(${p.id})"
+      style="
+        margin-top:8px;
+        padding:6px 10px;
+        border:none;
+        border-radius:6px;
+        background:#25D366;
+        color:white;
+        cursor:pointer;
+        font-size:12px;
+      ">
+      📲 WhatsApp
+    </button>
+
+  </div>
+`;
+    
+
+  }).join("");
 }

@@ -1026,11 +1026,18 @@ fechaGasto.value = hoy;
 document.querySelectorAll("#checkboxPersonas input")
   .forEach(cb => cb.checked = false);
 
-// limpiar foto 👇
-if (inputFoto) inputFoto.value = "";
 
-  
+ const aportes = aportaciones
+  .filter(a => {
 
+    if (a.personaId !== p.id) return false;
+    if (!a.date) return false;
+
+    const f = new Date(a.date);
+    return f.getMonth() === mes && f.getFullYear() === año;
+
+  })
+  .sort((a, b) => new Date(a.date) - new Date(b.date));
 
 
 window.actualizarTelefono = async (id, valor) => {
@@ -1882,4 +1889,360 @@ y += 10;
   pdf.save("resumen_gastos_1_pagina.pdf");
 };
 
+window.exportarAportacionesAnualPro = () => {
 
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  let y = 15;
+
+  const hoy = new Date();
+  const año = hoy.getFullYear();
+  const hoyTxt = hoy.toLocaleDateString("es-ES");
+
+  const inicioAño = new Date(año, 0, 1);
+
+  // 🟦 HEADER
+  pdf.setFillColor(30, 60, 120);
+  pdf.rect(0, 0, 210, 30, "F");
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.text("CAFÉ SEMANAL", 10, 12);
+
+  pdf.setFontSize(11);
+  pdf.text("Aportaciones del año", 10, 20);
+  pdf.text(`Fecha: ${hoyTxt}`, 150, 20);
+
+  pdf.setTextColor(0, 0, 0);
+
+  y = 40;
+
+  let totalGlobal = 0;
+
+  personas.forEach(p => {
+
+    const aportes = aportaciones
+      .filter(a => {
+        if (a.personaId !== p.id) return false;
+        if (!a.date) return false;
+
+        const f = new Date(a.date);
+        return f >= inicioAño && f <= hoy;
+      })
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (aportes.length === 0) return;
+
+    // 👤 NOMBRE
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.text(p.nombre.toUpperCase(), 10, y);
+    y += 6;
+
+    const totalPersona = p.aportado || 0;
+
+    aportes.forEach(a => {
+
+      const fecha = new Date(a.date).toLocaleDateString("es-ES");
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(11);
+
+      pdf.text(fecha, 12, y);
+      pdf.text(`+${a.amount.toFixed(2)} €`, 170, y, { align: "right" });
+
+     
+      y += 5;
+
+      if (y > 270) {
+        pdf.addPage();
+        y = 20;
+      }
+
+    });
+
+    // ➖ línea
+    y += 2;
+    pdf.setDrawColor(200, 200, 200);
+    pdf.line(10, y, 200, y);
+    y += 5;
+
+    // 💰 TOTAL PERSONA
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+
+    pdf.text("Total", 12, y);
+
+    pdf.setTextColor(0, 102, 0);
+    pdf.text(`${totalPersona.toFixed(2)} €`, 170, y, { align: "right" });
+
+    pdf.setTextColor(0, 0, 0);
+
+    totalGlobal += totalPersona;
+
+    y += 10;
+
+  });
+
+  // 🔻 TOTAL GLOBAL
+  y += 5;
+
+  pdf.setFillColor(240, 240, 240);
+  pdf.rect(10, y - 6, 190, 12, "F");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(13);
+
+  pdf.text("TOTAL GENERAL", 12, y);
+
+  pdf.setTextColor(0, 120, 0);
+  pdf.text(`${totalGlobal.toFixed(2)} €`, 170, y, { align: "right" });
+
+  pdf.setTextColor(0, 0, 0);
+
+  // 🧾 FOOTER
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text("Generado automáticamente", 10, 290);
+
+  pdf.save(`aportaciones_${año}_pro.pdf`);
+};
+window.exportarGastosTotalesPro = () => {
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  let y = 15;
+  const hoy = new Date().toLocaleDateString("es-ES");
+
+  // 🟦 HEADER
+  pdf.setFillColor(30, 60, 120);
+  pdf.rect(0, 0, 210, 30, "F");
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.text("CAFÉ SEMANAL", 10, 12);
+
+  pdf.setFontSize(11);
+  pdf.text(`Gastos por persona`, 10, 20);
+  pdf.text(`Fecha: ${hoy}`, 150, 20);
+
+  pdf.setTextColor(0, 0, 0);
+
+  y = 40;
+
+  let totalGeneral = 0;
+
+  personas.forEach(p => {
+
+    let totalGastado = 0;
+
+    gastos.forEach(g => {
+      if (!g.participantes || !g.monto) return;
+
+      if (g.participantes.includes(p.id)) {
+        const parte = g.monto / g.participantes.length;
+        totalGastado += parte;
+      }
+    });
+
+    if (totalGastado === 0) return;
+
+    // 👤 nombre
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.text(p.nombre.toUpperCase(), 10, y);
+
+    // 💰 importe
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`${totalGastado.toFixed(2)} €`, 170, y, { align: "right" });
+
+    y += 8;
+
+    // línea suave
+    pdf.setDrawColor(220, 220, 220);
+    pdf.line(10, y, 200, y);
+
+    y += 6;
+
+    totalGeneral += totalGastado;
+
+    if (y > 270) {
+      pdf.addPage();
+      y = 20;
+    }
+
+  });
+
+  // 🔻 TOTAL DESTACADO
+  y += 10;
+
+  pdf.setFillColor(240, 240, 240);
+  pdf.rect(10, y - 6, 190, 12, "F");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(13);
+
+  pdf.text("TOTAL GENERAL", 12, y);
+
+  pdf.setTextColor(0, 120, 0);
+  pdf.text(`${totalGeneral.toFixed(2)} €`, 170, y, { align: "right" });
+
+  pdf.setTextColor(0, 0, 0);
+
+  // 🧾 FOOTER
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text("Generado automáticamente", 10, 290);
+
+  pdf.save("gastos_totales_pro.pdf");
+};
+window.exportarResumenFinal = () => {
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  let y = 15;
+  const hoy = new Date().toLocaleDateString("es-ES");
+
+  // 🟦 HEADER
+  pdf.setFillColor(30, 60, 120);
+  pdf.rect(0, 0, 210, 30, "F");
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.text("CAFÉ SEMANAL", 10, 12);
+
+  pdf.setFontSize(11);
+  pdf.text("Resumen general", 10, 20);
+  pdf.text(`Fecha: ${hoy}`, 150, 20);
+
+  pdf.setTextColor(0, 0, 0);
+
+  y = 40;
+
+  let totalAportadoGlobal = 0;
+  let totalGastadoGlobal = 0;
+
+  personas.forEach(p => {
+
+    // 👉 APORTADO (real)
+    const aportado = p.aportado || 0;
+
+    // 👉 GASTADO (real)
+    let gastado = 0;
+
+    gastos.forEach(g => {
+      if (!g.participantes || !g.monto) return;
+
+      if (g.participantes.includes(p.id)) {
+        const parte = g.monto / g.participantes.length;
+        gastado += parte;
+      }
+    });
+
+    const saldo = aportado - gastado;
+
+    // 👤 NOMBRE
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(12);
+    pdf.text(p.nombre.toUpperCase(), 10, y);
+    y += 6;
+
+    // 📊 DATOS
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+
+    pdf.text(`Aportado: ${aportado.toFixed(2)} €`, 12, y);
+    y += 5;
+
+    pdf.text(`Gastado: ${gastado.toFixed(2)} €`, 12, y);
+    y += 5;
+
+    // 💰 SALDO (color)
+    if (saldo >= 0) {
+      pdf.setTextColor(0, 120, 0); // verde
+    } else {
+      pdf.setTextColor(200, 0, 0); // rojo
+    }
+
+    pdf.text(`Saldo: ${saldo.toFixed(2)} €`, 12, y);
+
+    pdf.setTextColor(0, 0, 0);
+
+    y += 8;
+
+    // línea separación
+    pdf.setDrawColor(220, 220, 220);
+    pdf.line(10, y, 200, y);
+    y += 6;
+
+    totalAportadoGlobal += aportado;
+    totalGastadoGlobal += gastado;
+
+    if (y > 270) {
+      pdf.addPage();
+      y = 20;
+    }
+
+  });
+
+  const saldoGlobal = totalAportadoGlobal - totalGastadoGlobal;
+
+  // 🔻 TOTAL FINAL
+  y += 10;
+
+  pdf.setFillColor(240, 240, 240);
+  pdf.rect(10, y - 6, 190, 18, "F");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(13);
+
+  pdf.text("TOTAL GENERAL", 12, y);
+
+  y += 6;
+
+  pdf.setFontSize(11);
+  pdf.text(`Aportado: ${totalAportadoGlobal.toFixed(2)} €`, 12, y);
+  pdf.text(`Gastado: ${totalGastadoGlobal.toFixed(2)} €`, 80, y);
+
+  // saldo global color
+  if (saldoGlobal >= 0) {
+    pdf.setTextColor(0, 120, 0);
+  } else {
+    pdf.setTextColor(200, 0, 0);
+  }
+
+  pdf.text(`Saldo: ${saldoGlobal.toFixed(2)} €`, 150, y);
+
+  pdf.setTextColor(0, 0, 0);
+
+  // 🧾 FOOTER
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 150);
+  pdf.text("Generado automáticamente", 10, 290);
+
+  pdf.save("resumen_final.pdf");
+};
+function enviarWhatsAppPersona(p) {
+
+  const nombre = p.nombre;
+  const aportado = p.aportado || 0;
+
+  const gastado = calcularGastadoPersona(p.id);
+  const saldo = aportado - gastado;
+
+  let mensaje = `☕ *Cafe semanal*\n\n`;
+  mensaje += `👤 ${nombre}\n`;
+  mensaje += `💰 Aportado: ${aportado.toFixed(2)} €\n`;
+  mensaje += `💸 Gastado: ${gastado.toFixed(2)} €\n`;
+  mensaje += `📊 Saldo: ${saldo.toFixed(2)} €`;
+
+  const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
+  window.open(url, "_blank");
+}
