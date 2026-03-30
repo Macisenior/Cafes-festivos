@@ -286,7 +286,7 @@ if (fechaListado) {
   }
 }
 
-  console.log("RENDER OK", { personas, gastos });
+  
 }
   // 🎭 FRASES DINÁMICAS
 
@@ -443,7 +443,7 @@ async function cambiarGrupo(id) {
 // ➕ Crear nuevo grupo
 window.crearGrupo = async () => {
 
-  console.log("Estado edicionActiva:", edicionActiva);
+
 
   if (!edicionActiva) {
     alert("Debes desbloquear la edición con el PIN");
@@ -2228,15 +2228,33 @@ window.exportarResumenFinal = () => {
 
   pdf.save("resumen_final.pdf");
 };
-function enviarWhatsAppPersona(p) {
+window.enviarWhatsAppPersona = function(id) {
+
+  const p = personas.find(x => x.id === id);
+  if (!p) return;
 
   const nombre = p.nombre;
   const aportado = p.aportado || 0;
 
-  const gastado = calcularGastadoPersona(p.id);
+ let gastado = 0;
+
+gastos.forEach(g => {
+
+  if (!g.participantes || !g.monto) return;
+
+  if ((g.participantes || [])
+    .map(id => Number(id))
+    .includes(Number(p.id))) {
+
+    const parte = g.monto / g.participantes.length;
+    gastado += parte;
+
+  }
+
+}); 
   const saldo = aportado - gastado;
 
-  let mensaje = `☕ *Cafe semanal*\n\n`;
+  let mensaje = `☕ Cafe semanal\n\n`;
   mensaje += `👤 ${nombre}\n`;
   mensaje += `💰 Aportado: ${aportado.toFixed(2)} €\n`;
   mensaje += `💸 Gastado: ${gastado.toFixed(2)} €\n`;
@@ -2245,4 +2263,18 @@ function enviarWhatsAppPersona(p) {
   const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
 
   window.open(url, "_blank");
-}
+};
+window.volverApp = function() {
+
+  // 👇 ocultar todas las pantallas
+  document.querySelectorAll("[id^='pantalla']").forEach(p => {
+    p.style.display = "none";
+  });
+
+  // 👇 mostrar principal
+  document.getElementById("pantallaPrincipal").style.display = "block";
+
+  // 👇 refrescar datos SIEMPRE
+  render();
+
+};

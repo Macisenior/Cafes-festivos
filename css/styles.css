@@ -589,3 +589,17 @@ button:active {
   font-size: 14px;
   color: #0b0118;
 }
+.boton-pro {
+  margin: 8px 0;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.boton-pro:hover {
+  opacity: 0.9;
+}
