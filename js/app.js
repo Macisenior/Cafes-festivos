@@ -2259,8 +2259,8 @@ gastos.forEach(g => {
   mensaje += `💰 Aportado: ${aportado.toFixed(2)} €\n`;
   mensaje += `💸 Gastado: ${gastado.toFixed(2)} €\n`;
   mensaje += `📊 Saldo: ${saldo.toFixed(2)} €`;
-
-  const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+const telefono = p.telefono.replace(/\D/g, "");
+ const url = `https://wa.me/${p.telefono}?text=${encodeURIComponent(mensaje)}`;
 
   window.open(url, "_blank");
 };
