@@ -56,7 +56,21 @@
   </div>
 
   <!-- SHARE + PIN -->
+ <div class="card">
+  <button onclick="abrirRapido()" style="
+    width:100%;
+    background:#4CAF50;
+    color:white;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    font-weight:bold;
+  ">
+    ⚡ Añadir gasto rápido
+  </button>
+</div>
   <div class="card" id="shareCard">
+    
     <button onclick="compartirSoloLectura()" style="background: orangered;">
       👥 Compartir vista solo lectura
     </button>
@@ -87,6 +101,11 @@
   <div class="card editable hidden">
     <h2>💳 Añadir gasto</h2>
     <div id="sitiosContainer" class="sitios-container"></div>
+    <input 
+  id="sitioManual"
+  placeholder="Otro sitio..."
+  style="margin-top:6px; padding:6px; border-radius:6px; border:1px solid #ccc;"
+>
     <input id="fechaGasto" type="date">
     <input id="descripcionGasto">
     <div id="accionesParticipantes">
@@ -262,6 +281,24 @@ if ("serviceWorker" in navigator) {
     .catch(err => console.log("Error SW:", err));
 }
 </script>
+<div id="pantallaRapida" class="pantalla" style="display:none; padding:20px;">
 
+  <button onclick="volverApp()">← Volver</button>
+
+ <h2>📝 Gasto rápido</h2>
+
+<label>💳 Pagado por:</label>
+<select id="rapidoPagador"></select>
+
+<select id="rapidoSitio"></select>
+<input id="rapidoMonto" placeholder="Importe">
+
+<button onclick="seleccionarTodosRapido()">Seleccionar todos</button>
+
+<div id="rapidoPersonasContainer"></div>
+
+<button onclick="enviarGastoRapido(personas)">
+  📲 Enviar por WhatsApp
+</button>
 </body>
 </html>
