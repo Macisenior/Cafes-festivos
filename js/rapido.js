@@ -113,4 +113,11 @@ const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
   // limpiar inputs
   document.getElementById("rapidoSitio").value = "";
   document.getElementById("rapidoMonto").value = "";
+  // limpiar selección de personas
+document.querySelectorAll(".persona-btn").forEach(el => {
+  el.classList.remove("activo");
+  el.style.background = "#f5f5f5";
+  el.style.color = "#000";
+});
+document.getElementById("rapidoPagador").selectedIndex = 0;
 };
