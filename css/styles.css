@@ -603,3 +603,28 @@ button:active {
 .boton-pro:hover {
   opacity: 0.9;
 }
+.card-estado-fecha {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    animation: fadeIn 0.3s ease;
+}
+
+.estado-linea {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.estado-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

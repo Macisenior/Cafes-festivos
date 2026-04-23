@@ -391,7 +391,247 @@ function filtrarPorMes(gastos, mes, año) {
     return mesNum === mes && añoNum === año;
   });
 }
+const FECHA_INICIO = new Date("2026-04-01");
 
+// 🔥 calcular saldo actual (como tu pantalla real)
+function calcularSaldoActual(personaId) {
+
+  let gastado = 0;
+
+  gastos.forEach(g => {
+    if (!g.participantes || !g.monto) return;
+
+    if (g.participantes.map(id => Number(id)).includes(Number(personaId))) {
+      gastado += g.monto / g.participantes.length;
+    }
+  });
+
+  const p = personas.find(x => x.id === personaId);
+  return (p.aportado || 0) - gastado;
+}
+
+// 🔥 calcular saldo desde abril (solo movimientos)
+function calcularMovimientosDesdeInicio(personaId, fecha) {
+
+  let aportado = 0;
+  let gastado = 0;
+
+  aportaciones.forEach(a => {
+    const f = new Date(a.date);
+    if (f >= FECHA_INICIO && f <= fecha && a.personaId === personaId) {
+      aportado += a.amount;
+    }
+  });
+
+  gastos.forEach(g => {
+
+    if (!g.fecha) return;
+
+    const [d, m, y] = g.fecha.split("/");
+    const f = new Date(`${y}-${m}-${d}`);
+
+    if (f >= FECHA_INICIO && f <= fecha && g.participantes.includes(personaId)) {
+      gastado += g.monto / g.participantes.length;
+    }
+
+  });
+
+  return aportado - gastado;
+}
+
+// 🔥 FUNCIÓN FINAL (LA BUENA)
+function calcularSaldoEnFecha(personaId, fecha) {
+
+  const saldoHoy = calcularSaldoActual(personaId);
+  const movimientos = calcularMovimientosDesdeInicio(personaId, fecha);
+
+  // 🔥 clave: restar lo que ha pasado desde abril hasta esa fecha
+  const movimientosHoy = calcularMovimientosDesdeInicio(personaId, new Date());
+
+  const saldoInicial = saldoHoy - movimientosHoy;
+
+  return saldoInicial + movimientos;
+
+}
+window.verEstadoEnFecha = function() {
+
+  const input = document.getElementById("fechaConsulta");
+  if (!input.value) {
+    alert("Selecciona una fecha");
+    return;
+  }
+
+  const fecha = new Date(input.value);
+  const cont = document.getElementById("estadoFechaCard");
+
+  let html = `
+    <h3 style="margin-bottom:10px;">
+      📅 Estado en ${input.value}
+    </h3>
+  `;
+
+  personas.forEach(p => {
+
+    const saldo = calcularSaldoEnFecha(p.id, fecha);
+
+    let color = "";
+    let texto = "";
+
+    if (saldo < 0) {
+      color = "#ef4444";
+      texto = `${p.nombre} debe ${Math.abs(saldo).toFixed(2)} €`;
+    } else if (saldo > 0) {
+      color = "#22c55e";
+      texto = `${p.nombre} dispone de ${saldo.toFixed(2)} €`;
+    } else {
+      color = "#a78bfa";
+      texto = `${p.nombre} equilibrado`;
+    }
+
+    html += `
+      <div class="estado-linea">
+        <span class="estado-dot" style="background:${color}"></span>
+        <span>${texto}</span>
+      </div>
+    `;
+  });
+
+  cont.innerHTML = html;
+  cont.classList.remove("hidden");
+};
+window.exportarEstadoPDF = () => {
+
+  const fInicio = new Date(document.getElementById("fechaInicio").value);
+  const fFin = new Date(document.getElementById("fechaFin").value);
+
+  if (!fInicio || !fFin) {
+    alert("Selecciona fechas");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+
+  let y = 15;
+
+  // 🧾 CABECERA
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.text("Estado del grupo", 10, y);
+  y += 8;
+
+  pdf.setFontSize(11);
+  pdf.setFont("helvetica", "normal");
+  pdf.text(
+    `Desde ${fInicio.toLocaleDateString()} hasta ${fFin.toLocaleDateString()}`,
+    10,
+    y
+  );
+
+  y += 10;
+
+  let fecha = new Date(fInicio);
+  let estadoAnterior = null;
+
+  while (fecha <= fFin) {
+
+    let estadoActual = [];
+
+    // 🔥 calcular estado del día
+    personas.forEach(p => {
+      const saldo = calcularSaldoEnFecha(p.id, fecha);
+      estadoActual.push(saldo.toFixed(2));
+    });
+
+    // 🔥 comparar con día anterior
+    const igual = estadoAnterior &&
+      estadoAnterior.every((v, i) => v === estadoActual[i]);
+
+    if (!igual) {
+
+      // 📅 FECHA
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(12);
+      pdf.text(fecha.toLocaleDateString("es-ES"), 10, y);
+      y += 4;
+
+      pdf.setDrawColor(200);
+      pdf.line(10, y, 200, y);
+      y += 6;
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+
+      // 👥 PERSONAS
+      personas.forEach((p, i) => {
+
+        const saldo = parseFloat(estadoActual[i]);
+
+     const nombre = p.nombre;
+const valor = (saldo >= 0 ? "+" : "") + saldo.toFixed(2) + " €";
+
+// 🔴 color según saldo
+if (saldo < 0) {
+  pdf.setTextColor(220, 38, 38); // rojo
+} else {
+  pdf.setTextColor(0, 0, 0); // negro
+}
+
+pdf.text(nombre, 10, y);
+pdf.text(valor, 190, y, { align: "right" });
+
+// 🔁 resetear color (importante)
+pdf.setTextColor(0, 0, 0);   
+
+        y += 5;
+      });
+
+      y += 6;
+
+      // 📄 salto de página
+      if (y > 270) {
+        pdf.addPage();
+        y = 15;
+      }
+    }
+
+    estadoAnterior = estadoActual;
+    fecha.setDate(fecha.getDate() + 1);
+  }
+
+  // 🧾 RESUMEN FINAL
+  pdf.addPage();
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.text("Resumen final", 10, 20);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(11);
+
+  let yFinal = 30;
+
+personas.forEach(p => {
+
+  const saldo = calcularSaldoEnFecha(p.id, fFin);
+  const texto = `${p.nombre}: ${(saldo >= 0 ? "+" : "")}${saldo.toFixed(2)} €`;
+
+  // 🔴 color según saldo
+  if (saldo < 0) {
+    pdf.setTextColor(220, 38, 38); // rojo
+  } else {
+    pdf.setTextColor(0, 0, 0); // negro
+  }
+
+  pdf.text(texto, 10, yFinal);
+
+  // 🔁 resetear color
+  pdf.setTextColor(0, 0, 0);
+
+  yFinal += 6;
+});
+
+  pdf.save("estado_historico_pro.pdf");
+};
 // 🔹 EXPORTAR PDF
 window.exportarMesPDF = (mes, año) => {
   exportarMesPDF(mes, año, personas, gastos);

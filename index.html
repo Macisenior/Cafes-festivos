@@ -164,6 +164,21 @@
     <button onclick="generarPDFResumen()" style="background: violet;">
       📊 Resumen
     </button>
+    <input type="date" id="fechaConsulta">
+<button onclick="verEstadoEnFecha()">Ver estado</button>
+<div id="estadoFechaCard" class="card-estado-fecha hidden"></div>
+<div style="margin-top:15px;">
+
+  <h3>📄 Exportar estado por fechas</h3>
+
+  <input type="date" id="fechaInicio">
+  <input type="date" id="fechaFin">
+
+  <button onclick="exportarEstadoPDF()">
+    📄 Exportar PDF
+  </button>
+
+</div>
   </div>
 
   <!-- BACKUP -->
