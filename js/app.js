@@ -516,7 +516,7 @@ window.exportarEstadoPDF = () => {
 
   // 🧾 CABECERA
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(16);
+  pdf.setFontSize(18);
   pdf.text("Estado del grupo", 10, y);
   y += 8;
 
@@ -560,7 +560,7 @@ window.exportarEstadoPDF = () => {
       y += 6;
 
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(10);
+      pdf.setFontSize(13);
 
       // 👥 PERSONAS
       personas.forEach((p, i) => {
@@ -578,15 +578,15 @@ if (saldo < 0) {
 }
 
 pdf.text(nombre, 10, y);
-pdf.text(valor, 190, y, { align: "right" });
+pdf.text(valor, 170, y, { align: "right" });
 
 // 🔁 resetear color (importante)
 pdf.setTextColor(0, 0, 0);   
 
-        y += 5;
+        y += 7;
       });
 
-      y += 6;
+      y += 10;
 
       // 📄 salto de página
       if (y > 270) {
