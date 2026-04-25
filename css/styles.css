@@ -628,3 +628,22 @@ button:active {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.grupo-fechas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.grupo-fechas label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.grupo-fechas input {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
