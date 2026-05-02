@@ -233,7 +233,7 @@ onAuthStateChanged(auth, async (user) => {
 
     await new Promise(resolve => setTimeout(resolve, 1500));
     await cargarListaGrupos();
-
+    await pintarDashboardGlobal();
     cargar();   // 🔥 sin await
     // ❌ quitar render();
 
@@ -1378,4 +1378,64 @@ window.volverApp = function() {
     .forEach(p => p.style.display = "none");
 
   document.getElementById("pantallaPrincipal").style.display = "block";
+};
+async function pintarDashboardGlobal() {
+
+  const snap = await getDocs(collection(db, "grupos"));
+
+  let totalGlobal = 0;
+  let html = `<h3>💰 Resumen global</h3>`;
+
+  snap.forEach(docSnap => {
+
+    const data = docSnap.data();
+    const nombre = data.nombreVisible || docSnap.id;
+
+    const personas = data.personas || [];
+    const gastos = data.gastos || [];
+
+    const totalAportado = personas.reduce((s, p) => s + (p.aportado || 0), 0);
+    const totalGastado = gastos.reduce((s, g) => s + (g.monto || 0), 0);
+
+    const totalGrupo = totalAportado - totalGastado;
+
+    totalGlobal += totalGrupo;
+
+    const color = totalGrupo < 0 ? "#ef4444" : "#22c55e";
+
+    html += `
+      <div class="linea-grupo">
+        <span>${nombre}</span>
+        <strong style="color:${color}">
+          ${totalGrupo.toFixed(2)} €
+        </strong>
+      </div>
+    `;
+  });
+
+  html += `
+    <hr style="margin:8px 0;">
+    <div class="linea-grupo">
+      <strong>Total</strong>
+      <strong>${totalGlobal.toFixed(2)} €</strong>
+    </div>
+  `;
+
+  const box = document.getElementById("dashboardGlobal");
+
+  if (box) {
+    box.innerHTML = html;
+    box.classList.remove("hidden");
+  }
+}
+
+window.abrirDashboardGlobal = () => {
+
+  document.querySelectorAll(".pantalla")
+    .forEach(p => p.classList.remove("activa"));
+
+  document.getElementById("pantallaGlobal")
+    .classList.add("activa");
+
+  pintarDashboardGlobal(); // 👈 ESTO ES LO QUE FALTA
 };
