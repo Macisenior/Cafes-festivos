@@ -1429,13 +1429,3 @@ async function pintarDashboardGlobal() {
   }
 }
 
-window.abrirDashboardGlobal = () => {
-
-  document.querySelectorAll(".pantalla")
-    .forEach(p => p.classList.remove("activa"));
-
-  document.getElementById("pantallaGlobal")
-    .classList.add("activa");
-
-  pintarDashboardGlobal(); // 👈 ESTO ES LO QUE FALTA
-};

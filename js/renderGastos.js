@@ -10,8 +10,17 @@ export function renderGastos(gastos, personas, filtrarPorMes) {
   const gastosVisibles = filtrarPorMes(gastos, mes, año);
 
   listaGastos.innerHTML = gastosVisibles
-    .slice()
-    .reverse()
+   .slice()
+.sort((a, b) => {
+
+  const [da, ma, aa] = a.fecha.split("/");
+  const [db, mb, ab] = b.fecha.split("/");
+
+  const fechaA = new Date(aa, ma - 1, da);
+  const fechaB = new Date(ab, mb - 1, db);
+
+  return fechaB - fechaA;
+})
     .map(g => `
       <div class="gasto-item">
 
