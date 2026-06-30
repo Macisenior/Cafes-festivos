@@ -37,6 +37,7 @@ import {
 window.enviarGastoRapido = enviarGastoRapido;
 window.seleccionarTodosRapido = seleccionarTodosRapido;
 console.log("APP JS CARGADO");
+
 function render() {
 
   const totalRestante = document.getElementById("heroMensaje");
@@ -234,6 +235,12 @@ onAuthStateChanged(auth, async (user) => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     await cargarListaGrupos();
     await pintarDashboardGlobal();
+    const hoy = new Date().toISOString().split("T")[0];
+
+if (fechaGasto) fechaGasto.value = hoy;
+
+const fechaIngreso = document.getElementById("cashDate");
+if (fechaIngreso) fechaIngreso.value = hoy;
     cargar();   // 🔥 sin await
     // ❌ quitar render();
 
@@ -464,16 +471,30 @@ window.verEstadoEnFecha = function() {
   const fecha = new Date(input.value);
   const cont = document.getElementById("estadoFechaCard");
 
-  let html = `
-    <h3 style="margin-bottom:10px;">
-      📅 Estado en ${input.value}
-    </h3>
-  `;
+let totalGrupo = 0;
+personas.forEach(p => {
+  totalGrupo += calcularSaldoEnFecha(p.id, fecha);
+});
+let html = `
+  <h3 style="margin-bottom:10px;">
+    📅 Estado en ${input.value}
+  </h3>
+
+  <p><strong>👥 Participantes:</strong> ${personas.length}</p>
+  <p><strong>💰 Total disponible:</strong>
+    <span style="color:${totalGrupo < 0 ? "#ef4444" : "#22c55e"}">
+    ${totalGrupo.toFixed(2)} €  
+    </span>
+  </p>
+
+  <hr style="margin:12px 0;">
+`;
+
 
   personas.forEach(p => {
 
     const saldo = calcularSaldoEnFecha(p.id, fecha);
-
+   
     let color = "";
     let texto = "";
 
@@ -1072,6 +1093,8 @@ descripcionGasto.value = "cafes";
 
 const hoy = new Date().toISOString().split("T")[0];
 fechaGasto.value = hoy;
+const fechaIngreso = document.getElementById("cashDate");
+if (fechaIngreso) fechaIngreso.value = hoy;
 
 document.querySelectorAll("#checkboxPersonas input")
   .forEach(cb => cb.checked = false);
