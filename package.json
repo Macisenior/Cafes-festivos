@@ -1,0 +1,47 @@
+{
+    "name":  "gastos-del-grupo-v4",
+    "private":  true,
+    "version":  "0.0.0",
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "vite",
+                    "build":  "tsc -b \u0026\u0026 vite build",
+                    "test":  "vitest run",
+                    "diagnose:firestore":  "tsx scripts/diagnose-firestore-read.ts",
+                    "reconcile:firestore":  "tsx scripts/reconcile-firestore-v3.ts",
+                    "analyze:allocations":  "tsx scripts/analyze-expense-allocation-differences.ts",
+                    "migrate:general-v4":  "tsx scripts/migrate-v3-general-to-v4.ts",
+                    "diagnose:v4":  "tsx scripts/diagnose-v4-group.ts",
+                    "verify:v4-contribution-write":  "tsx scripts/verify-v4-contribution-write.ts",
+                    "check:v4-contribution-write-state":  "tsx scripts/check-v4-contribution-write-state.ts",
+                    "diagnose:v3-viernes-oficial":  "tsx scripts/diagnose-v3-viernes-oficial.ts",
+                    "diagnose:v3-group":  "tsx scripts/diagnose-v3-viernes-oficial.ts",
+                    "check:v4-group-target":  "tsx scripts/check-v4-group-target.ts",
+                    "migrate:viernes-oficial-v4":  "tsx scripts/migrate-v3-viernes-oficial-to-v4.ts",
+                    "migrate:torreznos-v4":  "tsx scripts/migrate-v3-torreznos-to-v4.ts",
+                    "lint":  "oxlint",
+                    "preview":  "vite preview",
+                    "test:rules":  "firebase emulators:exec --only firestore \"vitest run tests/firestore\"",
+                    "functions:build":  "npm --prefix functions run build",
+                    "test:functions":  "vitest run tests/functions",
+                    "test:operations":  "npm run functions:build \u0026\u0026 firebase emulators:exec --only firestore,auth,functions \"vitest run tests/functions-emulator --maxWorkers=1 --no-file-parallelism --testTimeout=15000\""
+                },
+    "dependencies":  {
+                         "firebase":  "^12.17.1",
+                         "react":  "^19.2.8",
+                         "react-dom":  "^19.2.8"
+                     },
+    "devDependencies":  {
+                            "@firebase/rules-unit-testing":  "^5.0.1",
+                            "@types/node":  "^24.13.3",
+                            "@types/react":  "^19.2.17",
+                            "@types/react-dom":  "^19.2.3",
+                            "@vitejs/plugin-react":  "^6.0.4",
+                            "oxlint":  "^1.75.0",
+                            "tsx":  "^4.23.11",
+                            "typescript":  "~6.0.2",
+                            "vite":  "^8.2.0",
+                            "vite-plugin-pwa":  "^1.3.0",
+                            "vitest":  "^4.1.10"
+                        }
+}

@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// Reglas locales candidatas. No se han desplegado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // V3: conserva el comportamiento publicado actual para toda su raíz.
+    match /grupos/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // V4 se aísla expresamente de V3. Hasta disponer de identidad con roles o
+    // backend de confianza, ningún cliente puede escribir datos V4.
+    // V3: documento histórico gastos/grupo, sin subcolecciones actuales.
+    match /gastos/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+    match /grupos_v4/{groupId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+
+      match /{document=**} {
+        allow read: if isAuthenticated();
+        allow write: if false;
+      }
+    }
+
+    // Las rutas no inventariadas permanecen cerradas.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

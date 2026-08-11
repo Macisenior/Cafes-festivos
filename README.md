@@ -1,181 +1,32 @@
-# 💸 Gastos del Grupo
+# React + TypeScript + Vite
 
-Aplicación web ligera para la gestión de gastos compartidos entre amigos o grupos (viajes, eventos, salidas, etc.).
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-Permite registrar aportaciones, gastos, balances individuales, generar informes en PDF y gestionar múltiples grupos.
+Currently, two official plugins are available:
 
----
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## 🚀 Características principales
+## React Compiler
 
-- 👤 Gestión de personas
-- 💰 Registro de aportaciones iniciales
-- ➕ Añadir efectivo adicional con fecha
-- 💳 Registro de gastos con reparto automático
-- 📊 Cálculo dinámico de balances
-- 📈 Gráficos visuales (Chart.js)
-- 📋 Pantalla independiente para gestionar gastos
-- 🗑 Eliminación protegida en modo edición
-- 🔐 Modo edición con PIN
-- 👥 Vista solo lectura compartible
-- 📱 Envío rápido a WhatsApp
-- 💾 Copia de seguridad en JSON
-- ♻️ Restauración de copia
-- 📄 Exportación a PDF:
-  - PDF PRO (con gráficos)
-  - PDF Resumen avanzado (con secciones dinámicas)
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
----
+## Expanding the Oxlint configuration
 
-## 🏗 Arquitectura
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
 
-### Frontend
-- HTML + CSS
-- JavaScript Vanilla (sin frameworks)
-- Chart.js para visualización
-- jsPDF para generación de informes
-
-### Persistencia
-- Firebase Firestore
-- Un documento por grupo
-- Guardado manual mediante `setDoc()`
-
----
-
-## 📦 Modelo de Datos
-
-### Persona
-```js
+```json
 {
-  Gasto  
-  id: number,
-  nombre: string,
-  aportado: number,
-  telefono?: string
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
 }
-{
-  id: number,
-  sitio: string,
-  descripcion: string,
-  monto: number,
-  participantes: number[],
-  fecha: string
-}
-Aportación en efectivo
-{
-  nombre: string,
-  amount: number,
-  date: string
-}
-🔄 Flujo principal
+```
 
-Selección o creación de grupo
-
-Añadir personas
-
-Registrar aportaciones
-
-Añadir gastos con reparto automático
-
-Visualizar balances
-
-Exportar PDF o compartir vista
-
-📄 Sistema PDF avanzado
-
-El PDF Resumen incluye:
-
-Encabezado automático por página
-
-Sistema de secciones dinámicas
-
-Control manual de saltos de página
-
-Redibujado automático de subtítulos
-
-Tabla de gastos por día y sitio
-
-Día más caro resaltado
-
-Totales por sitio
-
-Sistema basado en:
-
-Variable seccionActual
-
-Función nuevaPagina()
-
-Control manual de coordenada y
-
-🔐 Seguridad
-
-Modo edición protegido por PIN
-
-Botones críticos visibles solo en edición
-
-Confirmación antes de eliminar
-
-📊 Visualización
-
-Gráfico de barras: Aportado vs Gastado
-
-Gráfico tipo doughnut: Gasto por sitio
-
-📌 Estado actual
-
-Proyecto estable y funcional:
-
-Multi-grupo operativo
-
-Eliminación segura
-
-PDF PRO funcionando
-
-PDF Resumen estable sin páginas fantasma
-
-WhatsApp automático integrado
-
-Copia de seguridad funcional
-
-🧠 Posibles mejoras futuras
-
-PWA instalable
-
-Autenticación por usuario
-
-Backend propio
-
-Migración a framework (React/Vue)
-
-Exportación Excel
-
-Control de permisos por rol
-📄 Licencia
-
-Proyecto personal para uso privado.
-
----
-
-Si lo copias como `README.md` en la raíz del repo, GitHub lo mostrará automáticamente bonito.
-
----
-
-Ahora te digo algo serio:
-
-Ya tienes proyecto documentado como si fuera un producto real.
-
-Y eso marca la diferencia entre:
-
-> “Hago cosas”  
-y  
-> “Construyo software”.
-
-Si quieres, el siguiente nivel sería:
-
-- Añadir estructura de carpetas
-- Separar lógica en módulos
-- O convertirlo en mini SaaS
-
-Pero hoy, disfruta esto.
-
-¿Lo subimos con commit elegante? 😎
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
