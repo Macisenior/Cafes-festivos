@@ -52,6 +52,11 @@ export function InformationPage({
   )
   const activePeople = entities.people.filter((person) => person.groupId === entities.group.id && person.isActive)
   const selectedBalance = selectedPerson ? balancesByPersonId.get(selectedPerson.id)?.availableInCents ?? 0 : null
+  const todayLabel = new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date())
 
   return (
     <section className="information-page" aria-label="Información del grupo">
@@ -73,7 +78,7 @@ export function InformationPage({
           <p className="group-name">{entities.group.name}</p>
         </div>
         {selectedBalance !== null && <aside className="information-personal-balance"><span>Tu saldo</span><strong className={selectedBalance > 0 ? 'positive' : selectedBalance < 0 ? 'negative' : ''}>{formatCurrency(selectedBalance)}</strong></aside>}
-        <footer className="information-hero-footer"><span className="information-live-dot" aria-hidden="true" />Actualizado hoy · Solo lectura</footer>
+        <footer className="information-hero-footer"><span className="information-live-dot" aria-hidden="true" />Actualizado hoy · {todayLabel}</footer>
       </section>
 
       {isUserPickerOpen && (
