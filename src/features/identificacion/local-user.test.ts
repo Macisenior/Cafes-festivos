@@ -73,6 +73,17 @@ describe('identificación local', () => {
     expect(restoreSelectedPersonId(storage, getActivePeople(people, 'general'), 'general')).toBe('ana')
   })
 
+  it('solicita una identificación nueva al cambiar a un grupo sin usuario local guardado', () => {
+    const storage = new MemoryStorage()
+    saveSelectedPersonId(storage, 'general', 'ana')
+    const otherGroupPeople: readonly Person[] = [
+      { id: 'carlos', groupId: 'torreznos', name: 'Carlos', phone: '', isActive: true },
+    ]
+
+    expect(
+      restoreSelectedPersonId(storage, getActivePeople(otherGroupPeople, 'torreznos'), 'torreznos'),
+    ).toBeNull()
+  })
   it('elige el saludo según la hora local', () => {
     expect(greetingForHour(8)).toBe('Buenos días')
     expect(greetingForHour(16)).toBe('Buenas tardes')

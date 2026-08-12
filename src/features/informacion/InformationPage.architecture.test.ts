@@ -21,11 +21,21 @@ describe('Pantalla 1 — Información', () => {
     expect(informationPageSource).not.toContain('deleteDoc')
   })
 
-  it('mantiene las consultas ligadas al grupo activo y delega el estado compartido al contenedor', () => {
-    expect(informationPageSource).toContain('ActiveGroupSelector')
+  it('muestra grupo como información de consulta y solo solicita la identificación inicial cuando falta', () => {
+    expect(informationPageSource).toContain('information-active-group')
+    expect(informationPageSource).toContain('{entities.group.name}')
+    expect(informationPageSource).toContain('selectedPerson?.name')
+    expect(informationPageSource).not.toContain('ActiveGroupSelector')
+    expect(informationPageSource).not.toContain('Cambiar usuario')
+    expect(informationPageSource).not.toContain('onChangeGroup')
+    expect(informationPageSource).toContain('selectedPerson === null')
+    expect(informationPageSource).toContain('onSelectInitialPerson')
+    expect(informationPageSource).toContain('person.isActive')
+  })
+
+  it('mantiene las consultas financieras existentes vinculadas al grupo actual', () => {
     expect(informationPageSource).toContain('<ExpensesBySite groupId={entities.group.id}')
     expect(informationPageSource).toContain('AccountStatusList')
-    expect(informationPageSource).toContain('onSelectPerson')
     expect(informationPageSource).toContain('GlobalWalletSummary')
   })
 })

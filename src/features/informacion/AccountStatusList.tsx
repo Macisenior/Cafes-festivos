@@ -7,6 +7,7 @@ import { createPersonAccountSummary } from './person-account-summary'
 interface AccountStatusListProps {
   entities: GroupFinancialEntities
   financialView: GroupFinancialView
+  selectedPersonId: string | null
 }
 
 function formatCurrency(amountInCents: number): string {
@@ -19,7 +20,7 @@ function personStatus(balanceInCents: number): { label: string; tone: 'positive'
   return { label: 'Equilibrado', tone: 'neutral' }
 }
 
-export function AccountStatusList({ entities, financialView }: AccountStatusListProps) {
+export function AccountStatusList({ entities, financialView, selectedPersonId }: AccountStatusListProps) {
   const [expandedPersonId, setExpandedPersonId] = useState<string | null>(null)
   const balancesByPersonId = new Map(financialView.personBalances.map((balance) => [balance.personId, balance]))
 
@@ -37,6 +38,7 @@ export function AccountStatusList({ entities, financialView }: AccountStatusList
           if (balance === undefined) return null
           const accountStatus = personStatus(balance.availableInCents)
           const isExpanded = expandedPersonId === person.id
+          const isCurrentUser = selectedPersonId === person.id
           const detail = isExpanded ? createPersonAccountSummary(
             entities.group.id,
             person.id,
@@ -51,10 +53,10 @@ export function AccountStatusList({ entities, financialView }: AccountStatusList
             balance.availableInCents,
             entities.group.name,
           )
-          return <li className={`account-card account-card--${accountStatus.tone}${isExpanded ? ' is-expanded' : ''}`} key={person.id}>
+          return <li className={`account-card account-card--${accountStatus.tone}${isCurrentUser ? ' is-current-user' : ''}${isExpanded ? ' is-expanded' : ''}`} key={person.id}>
             <div className="information-account-row">
               <button type="button" className="information-account-toggle" aria-expanded={isExpanded} onClick={() => setExpandedPersonId((current) => current === person.id ? null : person.id)}>
-                <span className="information-account-person"><span className={`information-account-dot ${accountStatus.tone}`} aria-hidden="true" /><span><strong>{person.name}</strong><small className={`account-status ${accountStatus.tone}`}>{accountStatus.label}</small></span></span>
+                <span className="information-account-person"><span className={`information-account-dot ${accountStatus.tone}`} aria-hidden="true" /><span><span className="information-account-name-row"><strong>{person.name}</strong></span><small className={`account-status ${accountStatus.tone}`}>{accountStatus.label}</small></span></span>
                 <span className={`person-balance ${accountStatus.tone}`}>{formatCurrency(balance.availableInCents)}</span>
               </button>
               {whatsAppUrl && <a className="information-account-whatsapp" href={whatsAppUrl} target="_blank" rel="noreferrer" aria-label={`Preparar mensaje de WhatsApp para ${person.name}`}>◉<span>WhatsApp</span></a>}

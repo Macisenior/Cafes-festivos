@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import type { Group, Person } from '../../domain/entities'
 import type { ExpenseDistributionMode, PersonId } from '../../domain/reparto'
 import { FirestoreV4OperationalFunctionsClient } from '../../infrastructure/functions/firestore-v4-operational-functions-client'
@@ -6,6 +6,7 @@ import { FirestoreV4OperationalFunctionsClient } from '../../infrastructure/func
 import { eurosToCents } from '../aportaciones/cash-contribution-request'
 import {
   individualAmountsInCents,
+  previewIndividualAmounts,
   summarizeIndividualAmounts,
   type IndividualAmountSummary,
 } from './expense-form-inputs'
@@ -82,6 +83,10 @@ export function AddExpenseForm({ group, people, operationalPin, onGroupChanged }
     }
   }
 
+  const individualFeedback = mode === 'importe' && participantIds.length > 0
+    ? previewIndividualAmounts(totalInEuros, participantIds, individualAmounts)
+    : null
+
   let individualSummary: IndividualAmountSummary | null = null
   if (mode === 'importe' && participantIds.length > 0) {
     try {
@@ -154,8 +159,8 @@ export function AddExpenseForm({ group, people, operationalPin, onGroupChanged }
         <label>Reparto<select value={mode} disabled={isSaving} onChange={(event) => setMode(event.target.value as ExpenseDistributionMode)}><option value="igual">Igual</option><option value="consumiciones">Consumiciones</option><option value="importe">Importe por persona</option></select></label>
         {mode === 'consumiciones' && <div className="distribution-fields">{participantIds.map((personId) => <label key={personId}>Consumiciones de {activePeople.find((person) => person.id === personId)?.name}<input type="number" min="1" step="1" disabled={isSaving} required value={consumptions[personId] ?? ''} onChange={(event) => setConsumptions((current) => ({ ...current, [personId]: event.target.value }))} /></label>)}</div>}
         {mode === 'importe' && <div className="distribution-fields">{participantIds.map((personId) => <label key={personId}>Importe de {activePeople.find((person) => person.id === personId)?.name} (€)<input inputMode="decimal" disabled={isSaving} required value={individualAmounts[personId] ?? ''} onChange={(event) => setIndividualAmounts((current) => ({ ...current, [personId]: event.target.value }))} /></label>)}</div>}
-        {mode === 'importe' && individualSummary && <p className={`individual-amount-summary ${individualSummary.matchesTotal ? 'matches' : 'mismatch'}`}>Suma individual: {formatCurrency(individualSummary.assignedInCents)} · Total: {formatCurrency(individualSummary.totalInCents)}{individualSummary.matchesTotal ? ' ✓' : ' — debe coincidir exactamente'}</p>}
-        <button type="submit" disabled={isSaving || (mode === 'importe' && individualSummary !== null && !individualSummary.matchesTotal)}>{isSaving ? 'Guardando…' : 'Añadir gasto'}</button>
+        {mode === 'importe' && individualFeedback && <p className={`individual-amount-summary ${individualFeedback.status === 'matches' ? 'matches' : 'mismatch'}`}>Suma individual: {formatCurrency(individualFeedback.assignedInCents)} · Total: {individualFeedback.totalInCents === null ? '—' : formatCurrency(individualFeedback.totalInCents)}{individualFeedback.status === 'matches' ? ' ✓' : individualFeedback.status === 'missing' ? ` · Faltan ${formatCurrency(individualFeedback.differenceInCents ?? 0)}` : individualFeedback.status === 'excess' ? ` · Sobran ${formatCurrency(Math.abs(individualFeedback.differenceInCents ?? 0))}` : ' · Introduce un total válido'}</p>}
+        <button type="submit" disabled={isSaving || (mode === 'importe' && individualSummary?.matchesTotal !== true)}>{isSaving ? 'Guardando…' : 'Añadir gasto'}</button>
       </form>
       {message && <p className="operation-message">{message}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}

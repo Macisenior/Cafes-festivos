@@ -20,6 +20,13 @@ describe('Pantalla 2 — Operativa', () => {
     expect(operationalPageSource).toContain('groupId={entities.group.id}')
   })
 
+  it('reutiliza Estado de cuentas antes de Añadir efectivo con la vista financiera compartida', () => {
+    expect(operationalPageSource).toContain('AccountStatusList')
+    expect(operationalPageSource).toContain('financialView={financialView}')
+    expect(operationalPageSource.indexOf('<AccountStatusList')).toBeLessThan(
+      operationalPageSource.indexOf('<AddCashContributionForm'),
+    )
+  })
   it('no importa módulos administrativos ni operaciones de edición o eliminación', () => {
     expect(operationalPageSource).not.toContain('TemporaryExpenseAdmin')
     expect(operationalPageSource).not.toContain('AdministrationPage')

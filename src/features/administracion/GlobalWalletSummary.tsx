@@ -86,7 +86,7 @@ export function GlobalWalletSummary({ firestore, activeGroupId, selectedPersonId
               : createWalletGroupDetail(group, groupEntities, groupFinancialView, selectedPersonId)
             const isExpanded = expandedGroupId === group.groupId
 
-            return <li key={group.groupId} className={`wallet-group-row wallet-group-row--${balanceTone(group.balanceInCents)} ${isExpanded ? 'wallet-group-row--expanded' : ''}`}>
+            return <li key={group.groupId} className={`wallet-group-row wallet-group-row--${balanceTone(group.balanceInCents)} ${group.groupId === activeGroupId ? 'wallet-group-row--active' : ''} ${isExpanded ? 'wallet-group-row--expanded' : ''}`}>
               <button className="wallet-group-toggle" type="button" aria-expanded={isExpanded} onClick={() => setExpandedGroupId((current) => toggleWalletGroupDetail(current, group.groupId))}>
                 <span className="wallet-group-toggle-main"><span className="wallet-group-icon" aria-hidden="true">{groupInitial(group.groupName)}</span><span><strong>{group.groupName}</strong>{group.groupId === activeGroupId && <small>Grupo activo</small>}</span></span>
                 <span className="wallet-group-toggle-value"><strong className={balanceTone(group.balanceInCents)}>{formatPdfMoney(group.balanceInCents)}</strong><span className="wallet-group-chevron" aria-hidden="true">⌄</span></span>

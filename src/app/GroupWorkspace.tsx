@@ -44,7 +44,6 @@ export function GroupWorkspace() {
   const [operationalPin, setOperationalPin] = useState<string | null>(null)
   const [administrationPin, setAdministrationPin] = useState<string | null>(null)
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
-  const [isUserPickerOpen, setIsUserPickerOpen] = useState(false)
   const [isChangingGroup, setIsChangingGroup] = useState(false)
   const [groupError, setGroupError] = useState<string | null>(null)
 
@@ -52,7 +51,6 @@ export function GroupWorkspace() {
     const activePeople = getActivePeople(entities.people, entities.group.id)
     const restoredPersonId = restoreSelectedPersonId(window.localStorage, activePeople, entities.group.id)
     setSelectedPersonId(restoredPersonId)
-    setIsUserPickerOpen(restoredPersonId === null)
   }
 
   useEffect(() => {
@@ -127,11 +125,15 @@ export function GroupWorkspace() {
     }
   }
 
-  function selectPerson(personId: string) {
+  function selectInitialPerson(personId: string) {
     if (state.status !== 'ready') return
-    saveSelectedPersonId(window.localStorage, state.entities.group.id, personId)
-    setSelectedPersonId(personId)
-    setIsUserPickerOpen(false)
+
+    const person = getActivePeople(state.entities.people, state.entities.group.id)
+      .find((candidate) => candidate.id === personId)
+    if (!person) return
+
+    saveSelectedPersonId(window.localStorage, state.entities.group.id, person.id)
+    setSelectedPersonId(person.id)
   }
 
   if (state.status === 'loading') return <main className="app-shell status-page">Cargando el grupo…</main>
@@ -150,16 +152,10 @@ export function GroupWorkspace() {
       {screen === 'information' ? (
         <InformationPage
           firestore={state.firestore}
-          availableGroups={state.availableGroups}
           entities={state.entities}
           financialView={state.financialView}
           selectedPerson={selectedPerson}
-          isUserPickerOpen={isUserPickerOpen}
-          isChangingGroup={isChangingGroup}
-          groupError={groupError}
-          onChangeGroup={(groupId) => void changeGroup(groupId)}
-          onToggleUserPicker={() => setIsUserPickerOpen((isOpen) => !isOpen)}
-          onSelectPerson={selectPerson}
+          onSelectInitialPerson={selectInitialPerson}
         />
       ) : screen === 'operational' ? (
         <PinGuard
@@ -176,6 +172,8 @@ export function GroupWorkspace() {
             firestore={state.firestore}
             availableGroups={state.availableGroups}
             entities={state.entities}
+            financialView={state.financialView}
+            selectedPersonId={selectedPerson?.id ?? null}
             isChangingGroup={isChangingGroup}
             groupError={groupError}
             onChangeGroup={(groupId) => void changeGroup(groupId)}
