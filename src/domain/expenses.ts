@@ -43,10 +43,14 @@ function assertMovementDate(date: MovementDate): void {
   }
 }
 
-function assertSite(group: Group, siteName: string): void {
-  if (siteName.trim().length === 0 || !group.siteOptions.some((site) => site.name === siteName)) {
-    throw new ExpenseDomainError('El sitio seleccionado no es válido para el grupo.')
+function normalizeSiteName(siteName: string): string {
+  const normalizedSiteName = siteName.trim()
+
+  if (normalizedSiteName.length === 0) {
+    throw new ExpenseDomainError('El sitio del gasto es obligatorio.')
   }
+
+  return normalizedSiteName
 }
 
 function assertConcept(concept: string): void {
@@ -108,7 +112,7 @@ export function createExpense(
   }
 
   assertMovementDate(input.date)
-  assertSite(group, input.siteName)
+  const siteName = normalizeSiteName(input.siteName)
   assertConcept(input.concept)
   assertTotal(input.totalInCents)
   assertParticipants(people, group.id, input.participantIds)
@@ -117,7 +121,7 @@ export function createExpense(
     id: input.id,
     groupId: input.groupId,
     date: input.date,
-    siteName: input.siteName,
+    siteName,
     concept: input.concept.trim(),
     totalInCents: input.totalInCents,
     participantIds: input.participantIds,

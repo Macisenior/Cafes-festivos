@@ -29,6 +29,18 @@ const baseInput = {
 }
 
 describe('creación de gastos V4', () => {
+  it('acepta un sitio predefinido del grupo', () => {
+    expect(createExpense(group, people, [], baseInput).siteName).toBe('Flap')
+  })
+
+  it('acepta un sitio manual y guarda su nombre sin espacios exteriores', () => {
+    expect(createExpense(group, people, [], { ...baseInput, siteName: '  Bar de la Plaza  ' }).siteName)
+      .toBe('Bar de la Plaza')
+  })
+
+  it.each(['', '   '])('rechaza un sitio vacío o compuesto solo por espacios', (siteName) => {
+    expect(() => createExpense(group, people, [], { ...baseInput, siteName })).toThrow(ExpenseDomainError)
+  })
   it('crea un reparto Igual con ajuste determinista de céntimos del motor', () => {
     const expense = createExpense(group, people, [], baseInput)
 
