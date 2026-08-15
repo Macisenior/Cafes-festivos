@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import type { Group, Person } from '../../domain/entities'
+import type { Expense, Group, Person } from '../../domain/entities'
 import type { ExpenseDistributionMode, PersonId } from '../../domain/reparto'
 import { FirestoreV4OperationalFunctionsClient } from '../../infrastructure/functions/firestore-v4-operational-functions-client'
+import { createHistoricalSiteSuggestions } from './historical-site-suggestions'
 
 import { eurosToCents } from '../aportaciones/cash-contribution-request'
 import {
@@ -16,6 +17,7 @@ const MAIN_SITES = ['Flap', 'Colono', 'Lydo'] as const
 interface AddExpenseFormProps {
   group: Group
   people: readonly Person[]
+  expenses: readonly Expense[]
   operationalPin: string
   onGroupChanged(): Promise<void>
 }
@@ -35,8 +37,9 @@ function formatCurrency(amountInCents: number): string {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amountInCents / 100)
 }
 
-export function AddExpenseForm({ group, people, operationalPin, onGroupChanged }: AddExpenseFormProps) {
+export function AddExpenseForm({ group, people, expenses, operationalPin, onGroupChanged }: AddExpenseFormProps) {
   const activePeople = people.filter((person) => person.groupId === group.id && person.isActive)
+  const historicalSiteSuggestions = createHistoricalSiteSuggestions(group.id, expenses, MAIN_SITES)
   const [date, setDate] = useState(todayInMadrid)
   const [siteName, setSiteName] = useState('')
   const [selectedMainSite, setSelectedMainSite] = useState<string | null>(null)
@@ -147,7 +150,7 @@ export function AddExpenseForm({ group, people, operationalPin, onGroupChanged }
         <fieldset className="expense-site-picker" disabled={isSaving}>
           <legend>Sitio</legend>
           <div className="expense-site-chips">{MAIN_SITES.map((site) => <button key={site} type="button" className={`expense-site-chip expense-site-chip--${site.toLowerCase()} ${selectedMainSite === site ? 'is-selected' : ''}`} onClick={() => { setSiteName(site); setSelectedMainSite(site) }}>{site}</button>)}</div>
-          <label>Otro sitio…<input value={siteName} onChange={(event) => { setSiteName(event.target.value); setSelectedMainSite(null) }} placeholder="Escribe otro sitio" /></label>
+          <label>Otro sitio…<input list="historical-site-suggestions" value={siteName} onChange={(event) => { setSiteName(event.target.value); setSelectedMainSite(null) }} placeholder="Escribe o reutiliza un sitio" /></label>`n          {historicalSiteSuggestions.length > 0 && <datalist id="historical-site-suggestions">{historicalSiteSuggestions.map((siteName) => <option key={siteName} value={siteName} />)}</datalist>}
         </fieldset>
         <label>Concepto<input value={concept} disabled={isSaving} onChange={(event) => setConcept(event.target.value)} required /></label>
         <label>Importe total (€)<input value={totalInEuros} disabled={isSaving} onChange={(event) => setTotalInEuros(event.target.value)} inputMode="decimal" placeholder="0,00" required /></label>

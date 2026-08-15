@@ -32,7 +32,7 @@ export function OperationalPage({ firestore, availableGroups, entities, financia
       {groupError && <p className="group-error" role="alert">{groupError}</p>}
     </div>
     <AccountStatusList entities={entities} financialView={financialView} selectedPersonId={selectedPersonId} />    <AddCashContributionForm groupId={entities.group.id} people={entities.people} firestore={firestore} operationalPin={operationalPin} onGroupChanged={onGroupChanged} />
-    <AddExpenseForm group={entities.group} people={entities.people} operationalPin={operationalPin} onGroupChanged={onGroupChanged} />
+    <AddExpenseForm group={entities.group} people={entities.people} expenses={entities.expenses} operationalPin={operationalPin} onGroupChanged={onGroupChanged} />
     <ExpensesBySite groupId={entities.group.id} expenses={entities.expenses} />
     <QuickExpenseDisclosure group={entities.group} people={entities.people} />
   </section>
