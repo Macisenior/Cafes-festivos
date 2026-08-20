@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { Contribution, Expense, Group, Person } from '../../domain/entities'
 import { createAccountStateAtDateReport } from './account-state-at-date'
-import { createStyledPdfDocument, formatPdfMoney, historicalPdfFilename } from './historical-pdf'
+import { createStyledPdfDocument, historicalPdfFilename } from './historical-pdf'
 import { prepareAccountStateAtDatePdf } from './account-state-at-date-pdf'
+import { AccountStateAtDateResults } from './AccountStateAtDateResults'
 
 interface AccountStateAtDateReportProps {
   group: Group
@@ -41,10 +42,7 @@ export function AccountStateAtDateReport({ group, people, contributions, expense
     <section className="operational-history" aria-labelledby="account-state-at-date-title">
       <div className="section-heading"><div><p className="eyebrow">Informes</p><h2 id="account-state-at-date-title">Estado a una fecha</h2><p className="history-group-name">Grupo: {group.name}</p></div></div>
       <div className="history-filters"><label>Fecha<input type="date" value={date} onChange={(event) => { if (event.target.value !== '') setDate(event.target.value) }} required /></label><button type="button" onClick={exportPdf}>📄 Exportar PDF</button></div>
-      {report.people.length === 0 ? <p className="history-empty-state">Este grupo no tiene personas para consultar.</p> : <ul className="history-list">
-        {report.people.map((person) => <li key={person.personId}><div><strong>{person.personName}</strong><span>Aportado: {formatPdfMoney(person.contributedInCents)} · Gastado: {formatPdfMoney(person.spentInCents)}{person.isActive ? '' : ' · Inactiva'}</span></div><strong className={person.balanceInCents > 0 ? 'positive' : person.balanceInCents < 0 ? 'negative' : ''}>{formatPdfMoney(person.balanceInCents)}</strong></li>)}
-      </ul>}
-      <div className="expense-report-total"><strong>SALDO DEL GRUPO</strong><strong className={report.groupBalanceInCents > 0 ? 'positive' : report.groupBalanceInCents < 0 ? 'negative' : ''}>{formatPdfMoney(report.groupBalanceInCents)}</strong></div>
+      <AccountStateAtDateResults report={report} />
       {pdfError && <p className="form-error" role="alert">{pdfError}</p>}
     </section>
   )

@@ -1467,7 +1467,79 @@ select {
   box-shadow: 0 0.5rem 1.4rem rgb(31 41 55 / 8%);
 }
 
-.information-page .information-wallet .operational-history,
+
+/* Estado a una fecha: consulta pública compacta, con los resultados compartidos de Informes. */
+.information-page .information-state-at-date {
+  padding: 1.08rem 1.12rem;
+  background: linear-gradient(135deg, #f8fbfa, #edf7f3);
+  border: 1px solid #d3e7df;
+  border-radius: 1.15rem;
+  box-shadow: 0 0.5rem 1.25rem rgb(22 87 71 / 7%);
+}
+
+.information-state-at-date-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.information-state-at-date-heading .eyebrow { color: #277166; }
+.information-state-at-date-heading h2 { margin: 0.18rem 0; color: #174c42; }
+.information-state-at-date-heading p:not(.eyebrow) { margin: 0; color: #55746b; font-size: 0.88rem; }
+
+.information-state-at-date-heading button {
+  flex: 0 0 auto;
+  padding: 0.62rem 0.78rem;
+  color: #fff;
+  background: #0b5d52;
+  border: 0;
+  border-radius: 0.72rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.information-state-at-date-content { margin-top: 1rem; }
+.information-state-at-date-content > label {
+  display: grid;
+  gap: 0.34rem;
+  color: #315e53;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.information-state-at-date-content input {
+  max-width: 13rem;
+  padding: 0.64rem 0.7rem;
+  color: #173f37;
+  background: #fff;
+  border: 1px solid #bddbd0;
+  border-radius: 0.68rem;
+  font: inherit;
+}
+.information-state-at-date-group { margin: 0.75rem 0 0.45rem; color: #55746b; font-size: 0.84rem; }
+.information-page .information-state-at-date .history-list { gap: 0.42rem; }
+.information-page .information-state-at-date .history-list li {
+  padding: 0.68rem 0;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 1px solid #dceae5;
+}
+.information-page .information-state-at-date .history-list li:last-child { border-bottom: 0; }
+.information-page .information-state-at-date .expense-report-total {
+  margin-top: 0.78rem;
+  padding: 0.78rem 0.85rem;
+  color: #fff;
+  background: #0b5d52;
+  border-radius: 0.78rem;
+}
+.information-page .information-state-at-date .expense-report-total strong { color: inherit; }
+
+@media (max-width: 28rem) {
+  .information-state-at-date-heading { align-items: flex-start; }
+  .information-state-at-date-heading button { padding-inline: 0.68rem; }
+}.information-page .information-wallet .operational-history,
 .information-page .information-sites .expenses-by-site {
   margin-top: 0;
 }

@@ -6,6 +6,7 @@ import { AccountStatusList } from './AccountStatusList'
 import { greetingForHour } from '../identificacion/local-user'
 import { ExpensesBySite } from './ExpensesBySite'
 import { QuickExpenseDisclosure } from './QuickExpenseDisclosure'
+import { InformationStateAtDate } from './InformationStateAtDate'
 
 interface InformationPageProps {
   firestore: Firestore
@@ -24,7 +25,6 @@ function groupStatusText(balanceInCents: number): string {
   if (balanceInCents < 0) return 'El grupo tiene saldo pendiente'
   return 'Las cuentas están equilibradas'
 }
-
 
 /** Pantalla 1: consulta pública sobre el grupo activo, sin operaciones de escritura. */
 export function InformationPage({
@@ -55,7 +55,6 @@ export function InformationPage({
         <div className="information-hero-welcome">
           <p>{selectedPerson ? greetingForHour(new Date().getHours()) : 'Identificación local'}</p>
           <h1 id="group-name">{selectedPerson?.name ?? '¿Quién está usando la aplicación?'}</h1>
-
         </div>
         <div className="information-group-balance">
           <p className="group-status">{groupStatusText(financialView.groupBalance.availableInCents)}</p>
@@ -65,7 +64,6 @@ export function InformationPage({
         {selectedBalance !== null && <aside className="information-personal-balance"><span>Tu saldo</span><strong className={selectedBalance > 0 ? 'positive' : selectedBalance < 0 ? 'negative' : ''}>{formatCurrency(selectedBalance)}</strong></aside>}
         <footer className="information-hero-footer"><span className="information-live-dot" aria-hidden="true" />Actualizado hoy · {todayLabel}</footer>
       </section>
-
 
       {selectedPerson === null && (
         <section className="user-picker information-user-picker" aria-labelledby="initial-user-picker-title">
@@ -83,6 +81,8 @@ export function InformationPage({
         </section>
       )}
       <AccountStatusList entities={entities} financialView={financialView} selectedPersonId={selectedPerson?.id ?? null} />
+
+      <InformationStateAtDate entities={entities} />
 
       <div className="information-wallet"><GlobalWalletSummary firestore={firestore} activeGroupId={entities.group.id} selectedPersonId={selectedPerson?.id ?? null} presentation="information" /></div>
 

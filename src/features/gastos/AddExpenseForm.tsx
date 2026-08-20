@@ -150,7 +150,8 @@ export function AddExpenseForm({ group, people, expenses, operationalPin, onGrou
         <fieldset className="expense-site-picker" disabled={isSaving}>
           <legend>Sitio</legend>
           <div className="expense-site-chips">{MAIN_SITES.map((site) => <button key={site} type="button" className={`expense-site-chip expense-site-chip--${site.toLowerCase()} ${selectedMainSite === site ? 'is-selected' : ''}`} onClick={() => { setSiteName(site); setSelectedMainSite(site) }}>{site}</button>)}</div>
-          <label>Otro sitio…<input list="historical-site-suggestions" value={siteName} onChange={(event) => { setSiteName(event.target.value); setSelectedMainSite(null) }} placeholder="Escribe o reutiliza un sitio" /></label>`n          {historicalSiteSuggestions.length > 0 && <datalist id="historical-site-suggestions">{historicalSiteSuggestions.map((siteName) => <option key={siteName} value={siteName} />)}</datalist>}
+          <label>Otro sitio…<input list="historical-site-suggestions" value={siteName} onChange={(event) => { setSiteName(event.target.value); setSelectedMainSite(null) }} placeholder="Escribe o reutiliza un sitio" /></label>
+          {historicalSiteSuggestions.length > 0 && <datalist id="historical-site-suggestions">{historicalSiteSuggestions.map((siteName) => <option key={siteName} value={siteName} />)}</datalist>}
         </fieldset>
         <label>Concepto<input value={concept} disabled={isSaving} onChange={(event) => setConcept(event.target.value)} required /></label>
         <label>Importe total (€)<input value={totalInEuros} disabled={isSaving} onChange={(event) => setTotalInEuros(event.target.value)} inputMode="decimal" placeholder="0,00" required /></label>
