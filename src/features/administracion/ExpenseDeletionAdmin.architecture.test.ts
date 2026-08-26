@@ -23,8 +23,12 @@ describe('presentación administrativa de gastos', () => {
   })
   it('muestra asignaciones almacenadas sin recalcular el reparto y conserva Editar/Eliminar', () => {
     expect(source).toContain('expenseAllocationDetails(viewingExpense, people)')
-    expect(source).not.toContain('createExpense')
+    expect(source).not.toContain("import { createExpense }")
     expect(source).toContain('Editar')
     expect(source).toContain('Eliminar')
+    expect(source).toContain('createExpenseShareCardData(group.name, viewingExpense, people)')
+    expect(source).toContain('shareExpenseImage')
+    expect(source).toContain('ExpenseShareCard')
+    expect(source).toContain('WhatsApp')
   })
 })

@@ -2499,6 +2499,29 @@ select {
 .expense-detail-allocations ul { display: grid; gap: 0.28rem; margin: 0.62rem 0 0; padding: 0; list-style: none; }
 .expense-detail-allocations li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.48rem 0.55rem; background: #f8faf9; border-radius: 0.5rem; color: #566a63; font-size: 0.8rem; }
 .expense-detail-allocations li strong { color: #1c665a; white-space: nowrap; }
+.expense-detail-actions { display: flex; justify-content: end; margin-top: 0.92rem; padding-top: 0.82rem; border-top: 1px solid #e1ebe7; }
+.expense-detail-actions button { padding: 0.5rem 0.72rem; color: #fff; background: #1b8b61; border: 0; border-radius: 0.55rem; cursor: pointer; font: inherit; font-size: 0.8rem; font-weight: 800; }
+.expense-detail-actions button:hover { background: #157653; }
+.expense-detail-actions button:disabled { cursor: wait; opacity: 0.7; }
+/* Tarjeta aislada destinada solo al PNG: no forma parte del modal visible. */
+.expense-share-card-host { position: fixed; top: 0; left: -10000px; width: 32rem; pointer-events: none; }
+.expense-share-card { box-sizing: border-box; width: 32rem; padding: 1.5rem; color: #1f3933; background: linear-gradient(145deg, #ffffff, #f1f8f5); border: 1px solid #c9e2d8; border-radius: 1.25rem; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.expense-share-card header { padding-bottom: 0.9rem; border-bottom: 1px solid #d7e9e1; }
+.expense-share-card header p, .expense-share-card-title p { margin: 0; color: #31806f; font-size: 0.7rem; font-weight: 850; letter-spacing: 0.09em; }
+.expense-share-card header h2 { margin: 0.24rem 0 0; color: #164e43; font-size: 1.42rem; letter-spacing: -0.035em; }
+.expense-share-card-title { padding: 1rem 0 0.85rem; }
+.expense-share-card-title h3 { margin: 0.22rem 0 0.1rem; color: #1d4d43; font-size: 1.5rem; letter-spacing: -0.035em; }
+.expense-share-card-title span { color: #58736a; font-size: 0.92rem; }
+.expense-share-card-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; margin: 0; }
+.expense-share-card-summary div { padding: 0.68rem; background: #eaf5f0; border-radius: 0.68rem; }
+.expense-share-card-summary div:last-child { grid-column: 1 / -1; }
+.expense-share-card-summary dt { color: #668078; font-size: 0.72rem; }
+.expense-share-card-summary dd { margin: 0.16rem 0 0; color: #1c5549; font-size: 0.92rem; font-weight: 850; }
+.expense-share-card-allocations { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid #d7e9e1; }
+.expense-share-card-allocations > strong { color: #315d52; font-size: 0.85rem; }
+.expense-share-card-allocations ul { display: grid; gap: 0.38rem; margin: 0.7rem 0 0; padding: 0; list-style: none; }
+.expense-share-card-allocations li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.58rem 0.66rem; background: #f8fbfa; border: 1px solid #e1eee8; border-radius: 0.58rem; color: #536c64; font-size: 0.88rem; }
+.expense-share-card-allocations li strong { color: #176b5b; white-space: nowrap; }
 
 @media (min-width: 40rem) {
   .expense-detail-modal { place-items: center; }

@@ -1,4 +1,4 @@
-﻿import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import type { Expense, Group, Person } from '../../domain/entities'
 import {
   compactExpenseParticipants,
@@ -9,6 +9,9 @@ import {
 } from './admin-expense-list'
 import { FirestoreV4AdministrationFunctionsClient } from '../../infrastructure/functions/firestore-v4-administration-functions-client'
 import { EditExpenseForm } from './EditExpenseForm'
+import { ExpenseShareCard } from './ExpenseShareCard'
+import { createExpenseShareCardData } from './expense-share-card'
+import { createExpenseShareFilename, createExpenseShareImageFile, shareExpenseImage } from './expense-share-image'
 
 interface ExpenseDeletionAdminProps {
   group: Group
@@ -34,6 +37,8 @@ export function ExpenseDeletionAdmin({ group, people, expenses, administrationPi
   const [viewingExpense, setViewingExpense] = useState<Expense | null>(null)
   const [period, setPeriod] = useState<AdminExpensePeriod>('current-month')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
+  const shareCardRef = useRef<HTMLDivElement>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -47,7 +52,26 @@ export function ExpenseDeletionAdmin({ group, people, expenses, administrationPi
   }, [groupId])
 
   const listedExpenses = visibleAdminExpenses(expenses, groupId, period)
+  const viewingExpenseShareData = viewingExpense === null ? null : createExpenseShareCardData(group.name, viewingExpense, people)
 
+  async function shareViewingExpense() {
+    if (viewingExpense === null || viewingExpense.groupId !== groupId || shareCardRef.current === null || isSharing) return
+
+    setMessage(null)
+    setError(null)
+    setIsSharing(true)
+    try {
+      const image = await createExpenseShareImageFile(shareCardRef.current, createExpenseShareFilename(group.name, viewingExpense))
+      const result = await shareExpenseImage(image, `Detalle de gasto · ${viewingExpense.siteName}`)
+      if (result === 'downloaded') setMessage('Tu navegador no puede compartir imágenes directamente. Se ha descargado el PNG.')
+    } catch (reason) {
+      if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
+        setError(reason instanceof Error ? `No se ha podido preparar la imagen: ${reason.message}` : 'No se ha podido preparar la imagen del gasto.')
+      }
+    } finally {
+      setIsSharing(false)
+    }
+  }
   async function deleteSelectedExpense() {
     if (selectedExpense === null || selectedExpense.groupId !== groupId || isDeleting) return
 
@@ -127,6 +151,8 @@ export function ExpenseDeletionAdmin({ group, people, expenses, administrationPi
               <div><dt>Reparto</dt><dd>{expenseDistributionLabel(viewingExpense.distribution.mode)}</dd></div>
             </dl>
             <div className="expense-detail-allocations"><strong>Participantes y asignación final</strong><ul>{expenseAllocationDetails(viewingExpense, people).map((allocation) => <li key={allocation.personId}><span>{allocation.personName}</span><strong>{formatCurrency(allocation.amountInCents)}</strong></li>)}</ul></div>
+            <footer className="expense-detail-actions"><button type="button" disabled={isSharing} onClick={() => void shareViewingExpense()}>{isSharing ? 'Preparando imagen…' : 'WhatsApp'}</button></footer>
+            {viewingExpenseShareData && <div className="expense-share-card-host" aria-hidden="true"><ExpenseShareCard ref={shareCardRef} detail={viewingExpenseShareData} /></div>}
           </div>
         </aside>
       )}
