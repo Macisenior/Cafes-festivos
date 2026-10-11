@@ -56,12 +56,17 @@ export function InformationPage({
           <p>{selectedPerson ? greetingForHour(new Date().getHours()) : 'Identificación local'}</p>
           <h1 id="group-name">{selectedPerson?.name ?? '¿Quién está usando la aplicación?'}</h1>
         </div>
+        {selectedBalance !== null && (
+          <aside className={`information-personal-balance ${selectedBalance > 0 ? 'is-positive' : selectedBalance < 0 ? 'is-negative' : 'is-neutral'}`}>
+            <span>Tu saldo personal</span>
+            <strong>{formatCurrency(selectedBalance)}</strong>
+          </aside>
+        )}
         <div className="information-group-balance">
-          <p className="group-status">{groupStatusText(financialView.groupBalance.availableInCents)}</p>
+          <p className="group-status">Saldo disponible del grupo</p>
           <p className="group-balance">{formatCurrency(financialView.groupBalance.availableInCents)}</p>
-          <p className="group-name">{entities.group.name}</p>
+          <p className="group-name">{entities.group.name} · {groupStatusText(financialView.groupBalance.availableInCents)}</p>
         </div>
-        {selectedBalance !== null && <aside className="information-personal-balance"><span>Tu saldo</span><strong className={selectedBalance > 0 ? 'positive' : selectedBalance < 0 ? 'negative' : ''}>{formatCurrency(selectedBalance)}</strong></aside>}
         <footer className="information-hero-footer"><span className="information-live-dot" aria-hidden="true" />Actualizado hoy · {todayLabel}</footer>
       </section>
 

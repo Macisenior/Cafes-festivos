@@ -1396,21 +1396,23 @@ select {
 
 .information-group-balance {
   display: grid;
-  gap: 0.18rem;
+  gap: 0.2rem;
 }
 
 .information-page .group-status {
   margin: 0;
   color: #bce7d8;
-  font-size: 0.86rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
 }
 
 .information-page .group-balance {
   margin: 0;
-  font-size: clamp(3rem, 15vw, 4.35rem);
-  line-height: 0.95;
-  letter-spacing: -0.075em;
+  font-size: clamp(2.15rem, 10vw, 3.2rem);
+  line-height: 1;
+  letter-spacing: -0.06em;
 }
 
 .information-page .group-name {
@@ -1419,31 +1421,47 @@ select {
 }
 
 .information-personal-balance {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.82rem 0.95rem;
-  background: rgb(255 255 255 / 13%);
-  border: 1px solid rgb(255 255 255 / 19%);
-  border-radius: 0.9rem;
-  backdrop-filter: blur(10px);
+  display: grid;
+  justify-items: start;
+  gap: 0.3rem;
+  padding: 1rem 1.1rem;
+  color: #163f37;
+  background: #f4fbf8;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 1.05rem;
+  box-shadow: 0 0.65rem 1.5rem rgb(2 42 37 / 17%);
 }
 
 .information-personal-balance span {
-  color: rgb(255 255 255 / 73%);
-  font-size: 0.8rem;
-  font-weight: 700;
+  color: #53716a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
 }
 
 .information-personal-balance strong {
-  color: #fff;
-  font-size: 1.2rem;
-  letter-spacing: -0.035em;
+  color: #176f57;
+  font-size: clamp(2rem, 10vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.055em;
 }
 
-.information-personal-balance strong.positive { color: #c8ffdf; }
-.information-personal-balance strong.negative { color: #ffd2d2; }
+.information-personal-balance.is-positive {
+  background: linear-gradient(135deg, #f6fdf9, #e7f7ef);
+}
+
+.information-personal-balance.is-positive strong { color: #137353; }
+
+.information-personal-balance.is-negative {
+  background: linear-gradient(135deg, #fffafa, #ffeded);
+  border-color: #ffd4d4;
+}
+
+.information-personal-balance.is-negative span { color: #8e5959; }
+.information-personal-balance.is-negative strong { color: #bd3f45; }
+
+.information-personal-balance.is-neutral strong { color: #355f56; }
 
 .information-hero-footer {
   display: flex;
