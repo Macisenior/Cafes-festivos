@@ -44,7 +44,7 @@ describe('Pantalla 3 — Administración', () => {
     expect(administrationPageSource).toContain('GlobalWalletSummary')
     expect(administrationPageSource).toContain('AccountStateAtDateReport')
     expect(administrationPageSource).toContain('ProSummaryReport')
-    expect(administrationPageSource).toContain('groupName={entities.group.name}')
+    expect(administrationPageSource).toContain('group={entities.group}')
     expect(administrationPageSource).not.toContain('ExpenseEdit')
   })
 })

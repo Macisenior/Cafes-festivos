@@ -128,13 +128,12 @@ export function AdministrationPage({
       {area === 'history' && (
         <section className="administration-area" aria-label="Históricos">
           <GroupOperationalHistory
-            groupId={entities.group.id}
+            group={entities.group}
             people={entities.people}
             contributions={entities.contributions}
             expenses={entities.expenses}
             title="Históricos"
             eyebrow="Administración"
-            groupName={entities.group.name}
             emptyMessage="Este grupo no tiene movimientos históricos."
             enableFilters
             defaultToCurrentMonth

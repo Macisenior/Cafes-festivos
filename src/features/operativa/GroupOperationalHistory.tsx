@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Contribution, Expense, GroupId, Person } from '../../domain/entities'
+import type { Contribution, Expense, Group, Person } from '../../domain/entities'
 import { createOperationalHistory } from './operational-history'
 import {
   EMPTY_HISTORICAL_FILTERS,
@@ -12,15 +12,15 @@ import {
   historicalPdfFilename,
   prepareHistoricalPdfReport,
 } from '../administracion/historical-pdf'
+import { createHistoricalPeriodSummary } from '../administracion/historical-period-summary'
 
 interface GroupOperationalHistoryProps {
-  groupId: GroupId
+  group: Group
   people: readonly Person[]
   contributions: readonly Contribution[]
   expenses: readonly Expense[]
   title?: string
   eyebrow?: string
-  groupName?: string
   emptyMessage?: string
   enableFilters?: boolean
   defaultToCurrentMonth?: boolean
@@ -38,18 +38,17 @@ function formatDate(date: string | null): string {
 const modeLabel = { igual: 'Igual', consumiciones: 'Consumiciones', importe: 'Importe por persona' }
 
 export function GroupOperationalHistory({
-  groupId,
+  group,
   people,
   contributions,
   expenses,
   title = 'Historial operativo',
   eyebrow = 'Consulta',
-  groupName,
   emptyMessage = 'Todavía no hay movimientos en este grupo.',
   enableFilters = false,
   defaultToCurrentMonth = false,
 }: GroupOperationalHistoryProps) {
-  const entries = createOperationalHistory(groupId, people, contributions, expenses)
+  const entries = createOperationalHistory(group.id, people, contributions, expenses)
   const initialFilters = () => defaultToCurrentMonth ? currentMonthHistoricalFilters() : EMPTY_HISTORICAL_FILTERS
   const [filters, setFilters] = useState<HistoricalFilters>(initialFilters)
   const [pdfError, setPdfError] = useState<string | null>(null)
@@ -57,10 +56,10 @@ export function GroupOperationalHistory({
   useEffect(() => {
     setFilters(initialFilters())
     setPdfError(null)
-  }, [groupId])
+  }, [group.id])
 
   const filteredEntries = enableFilters ? filterOperationalHistory(entries, filters) : entries
-  const peopleWithHistory = people.filter((person) => person.groupId === groupId && entries.some((entry) => (
+  const peopleWithHistory = people.filter((person) => person.groupId === group.id && entries.some((entry) => (
     entry.kind === 'contribution' ? entry.personId === person.id : entry.participantIds.includes(person.id)
   )))
 
@@ -86,13 +85,14 @@ export function GroupOperationalHistory({
       timeStyle: 'short',
       timeZone: 'Europe/Madrid',
     }).format(new Date())
-    const report = prepareHistoricalPdfReport(groupName ?? groupId, filteredEntries, filters, people, generatedOn)
+    const periodSummary = createHistoricalPeriodSummary(group, people, contributions, expenses, filters)
+    const report = prepareHistoricalPdfReport(group.name, filteredEntries, filters, people, generatedOn, periodSummary ?? undefined)
     if (report === null) {
       setPdfError('No hay movimientos para exportar con los filtros actuales.')
       return
     }
     setPdfError(null)
-    downloadHistoricalPdf(report, historicalPdfFilename(groupName ?? groupId, filters))
+    downloadHistoricalPdf(report, historicalPdfFilename(group.name, filters))
   }
 
   return (
@@ -101,7 +101,7 @@ export function GroupOperationalHistory({
         <div>
           <p className="eyebrow">{eyebrow}</p>
           <h2 id="operational-history-title">{title}</h2>
-          {groupName && <p className="history-group-name">Grupo: {groupName}</p>}
+          <p className="history-group-name">Grupo: {group.name}</p>
         </div>
         <span className="people-count">{filteredEntries.length} movimientos</span>
       </div>

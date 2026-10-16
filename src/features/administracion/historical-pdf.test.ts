@@ -140,4 +140,31 @@ describe('preparación del PDF de Históricos', () => {
     expect(pages.at(-1)).toContain('RESUMEN FINAL')
     expect(pages.every((page, index) => page.includes(`Página ${index + 1} de ${pages.length}`))).toBe(true)
   })
+
+  it('muestra el resumen acumulado fechado y mantiene su paginación', () => {
+    const report = prepare({ ...EMPTY_HISTORICAL_FILTERS, from: '2026-08-01', to: '2026-08-31', personId: 'ana' })
+    if (report === null) throw new Error('El informe de prueba debe tener movimientos.')
+    const enrichedReport = {
+      ...report,
+      periodSummary: {
+        openingDate: '2026-07-31', closingDate: '2026-08-31', openingBalanceInCents: 400,
+        contributionsInPeriodInCents: 9000, expensesInPeriodInCents: 7594,
+        periodBalanceInCents: 1406, closingBalanceInCents: 1806,
+      },
+      movements: Array.from({ length: 80 }, (_, index) => ({ ...report.movements[index % report.movements.length] })),
+    }
+    const pages = createHistoricalPdfPages(enrichedReport)
+    const rendered = pages.join('\n')
+
+    expect(rendered).toContain('Saldo anterior al período \\(31/07/2026\\)')
+    expect(rendered).toContain('Total aportaciones del período')
+    expect(rendered).toContain('Total gastos del período')
+    expect(rendered).toContain('Balance del período')
+    expect(rendered).toContain('Saldo acumulado al cierre \\(31/08/2026\\)')
+    expect(rendered).not.toContain('Saldo actual')
+    expect(rendered).toContain('18,06 €')
+    expect(enrichedReport.movements).toEqual(Array.from({ length: 80 }, (_, index) => report.movements[index % report.movements.length]))
+    expect(pages.length).toBeGreaterThan(1)
+    expect(pages.at(-1)).toContain('RESUMEN FINAL')
+  })
 })

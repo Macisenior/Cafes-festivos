@@ -2,6 +2,7 @@ import type { Person } from '../../domain/entities'
 import type { AmountInCents } from '../../domain/money'
 import type { HistoricalFilters } from '../operativa/operational-history-filters'
 import type { OperationalHistoryEntry } from '../operativa/operational-history'
+import type { HistoricalPeriodSummary } from './historical-period-summary'
 
 export interface HistoricalPdfMovement {
   kind: 'contribution' | 'expense'
@@ -18,6 +19,7 @@ export interface HistoricalPdfReport {
   totalContributionsInCents: AmountInCents
   totalExpensesInCents: AmountInCents
   balanceInCents: AmountInCents
+  periodSummary?: HistoricalPeriodSummary
 }
 
 /** Formato español de presentación; los importes de entrada permanecen en céntimos. */
@@ -55,6 +57,7 @@ export function prepareHistoricalPdfReport(
   filters: HistoricalFilters,
   people: readonly Person[],
   generatedOn: string,
+  periodSummary?: HistoricalPeriodSummary,
 ): HistoricalPdfReport | null {
   if (entries.length === 0) return null
 
@@ -90,6 +93,7 @@ export function prepareHistoricalPdfReport(
     totalContributionsInCents,
     totalExpensesInCents,
     balanceInCents: totalContributionsInCents - totalExpensesInCents,
+    periodSummary,
   }
 }
 
@@ -172,15 +176,29 @@ function addVisualMovement(page: VisualPdfPage, movement: HistoricalPdfMovement)
 }
 
 function addVisualSummary(page: VisualPdfPage, report: HistoricalPdfReport): void {
-  page.commands.push(`0.92 0.96 0.94 rg\n40 ${page.y - 70} 515 70 re f`)
+  const summaryLines = report.periodSummary === undefined
+    ? [
+        { label: 'Total aportaciones', amount: report.totalContributionsInCents, tone: '0.08 0.42 0.25' },
+        { label: 'Total gastos', amount: report.totalExpensesInCents, tone: '0.65 0.20 0.18' },
+        { label: 'Balance', amount: report.balanceInCents, tone: report.balanceInCents >= 0 ? '0.08 0.42 0.25' : '0.65 0.20 0.18' },
+      ]
+    : [
+        { label: `Saldo anterior al período (${formatPdfDate(report.periodSummary.openingDate)})`, amount: report.periodSummary.openingBalanceInCents, tone: report.periodSummary.openingBalanceInCents >= 0 ? '0.08 0.42 0.25' : '0.65 0.20 0.18' },
+        { label: 'Total aportaciones del período', amount: report.periodSummary.contributionsInPeriodInCents, tone: '0.08 0.42 0.25' },
+        { label: 'Total gastos del período', amount: report.periodSummary.expensesInPeriodInCents, tone: '0.65 0.20 0.18' },
+        { label: 'Balance del período', amount: report.periodSummary.periodBalanceInCents, tone: report.periodSummary.periodBalanceInCents >= 0 ? '0.08 0.42 0.25' : '0.65 0.20 0.18' },
+        { label: `Saldo acumulado al cierre (${formatPdfDate(report.periodSummary.closingDate)})`, amount: report.periodSummary.closingBalanceInCents, tone: report.periodSummary.closingBalanceInCents >= 0 ? '0.08 0.42 0.25' : '0.65 0.20 0.18' },
+      ]
+  const summaryHeight = 22 + summaryLines.length * 16
+  page.commands.push(`0.92 0.96 0.94 rg\n40 ${page.y - summaryHeight} 515 ${summaryHeight} re f`)
   page.commands.push(visualText('F2', 10, 52, page.y - 17, 'RESUMEN FINAL', '0.10 0.36 0.30'))
-  page.commands.push(visualText('F1', 9, 52, page.y - 35, 'Total aportaciones'))
-  page.commands.push(visualRightText('F2', 9, 540, page.y - 35, formatPdfMoney(report.totalContributionsInCents), '0.08 0.42 0.25'))
-  page.commands.push(visualText('F1', 9, 52, page.y - 50, 'Total gastos'))
-  page.commands.push(visualRightText('F2', 9, 540, page.y - 50, formatPdfMoney(report.totalExpensesInCents), '0.65 0.20 0.18'))
-  page.commands.push(visualText('F2', 11, 52, page.y - 66, 'Balance', '0.08 0.24 0.20'))
-  page.commands.push(visualRightText('F2', 11, 540, page.y - 66, formatPdfMoney(report.balanceInCents), report.balanceInCents >= 0 ? '0.08 0.42 0.25' : '0.65 0.20 0.18'))
-  page.y -= 82
+  summaryLines.forEach((line, index) => {
+    const isLast = index === summaryLines.length - 1
+    const y = page.y - 35 - index * 16
+    page.commands.push(visualText(isLast ? 'F2' : 'F1', isLast ? 11 : 9, 52, y, line.label, isLast ? '0.08 0.24 0.20' : undefined))
+    page.commands.push(visualRightText('F2', isLast ? 11 : 9, 540, y, formatPdfMoney(line.amount), line.tone))
+  })
+  page.y -= summaryHeight + 12
 }
 
 /** Plantilla visual reutilizable: cabecera, movimientos y resumen, sin modificar el informe recibido. */
@@ -195,7 +213,8 @@ export function createHistoricalPdfPages(report: HistoricalPdfReport): readonly 
     }
     addVisualMovement(page, movement)
   })
-  if (page.y - 82 < 62) {
+  const summaryHeight = report.periodSummary === undefined ? 82 : 114
+  if (page.y - summaryHeight < 62) {
     page = newVisualPage(report, pages.length + 1)
     pages.push(page)
   }
