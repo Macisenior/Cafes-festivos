@@ -495,6 +495,45 @@ select {
   background: #edf8f5;
 }
 
+.contribution-receipt {
+  margin-top: 0.9rem;
+  padding: 0.8rem;
+  color: #23433b;
+  background: #f5faf8;
+  border: 1px solid #bfd8d0;
+  border-radius: 0.65rem;
+}
+
+.contribution-receipt pre {
+  margin: 0.65rem 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font: inherit;
+}
+
+.contribution-receipt div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.contribution-receipt a,
+.contribution-receipt button {
+  padding: 0.55rem 0.75rem;
+  color: #fff;
+  background: #0d7666;
+  border: 0;
+  border-radius: 0.55rem;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.contribution-receipt p {
+  width: 100%;
+  margin: 0.15rem 0 0;
+}
+
 .same-day-confirmation {
   margin-top: 0.9rem;
   padding: 0.8rem;
