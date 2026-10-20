@@ -12,6 +12,7 @@ import {
   historicalPdfFilename,
   prepareHistoricalPdfReport,
 } from '../administracion/historical-pdf'
+import { shareHistoricalPdf } from '../administracion/historical-pdf-share'
 import { createHistoricalPeriodSummary } from '../administracion/historical-period-summary'
 
 interface GroupOperationalHistoryProps {
@@ -52,10 +53,12 @@ export function GroupOperationalHistory({
   const initialFilters = () => defaultToCurrentMonth ? currentMonthHistoricalFilters() : EMPTY_HISTORICAL_FILTERS
   const [filters, setFilters] = useState<HistoricalFilters>(initialFilters)
   const [pdfError, setPdfError] = useState<string | null>(null)
+  const [isSharingPdf, setIsSharingPdf] = useState(false)
 
   useEffect(() => {
     setFilters(initialFilters())
     setPdfError(null)
+    setIsSharingPdf(false)
   }, [group.id])
 
   const filteredEntries = enableFilters ? filterOperationalHistory(entries, filters) : entries
@@ -95,6 +98,36 @@ export function GroupOperationalHistory({
     downloadHistoricalPdf(report, historicalPdfFilename(group.name, filters))
   }
 
+  async function sharePdf() {
+    if (isSharingPdf) return
+    const generatedOn = new Intl.DateTimeFormat('es-ES', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+      timeZone: 'Europe/Madrid',
+    }).format(new Date())
+    const periodSummary = createHistoricalPeriodSummary(group, people, contributions, expenses, filters)
+    const report = prepareHistoricalPdfReport(group.name, filteredEntries, filters, people, generatedOn, periodSummary ?? undefined)
+    if (report === null) {
+      setPdfError('No hay movimientos para compartir con los filtros actuales.')
+      return
+    }
+
+    setPdfError(null)
+    setIsSharingPdf(true)
+    try {
+      const result = await shareHistoricalPdf(
+        report,
+        historicalPdfFilename(group.name, filters),
+        `Histórico · ${group.name}`,
+      )
+      if (result === 'unsupported') setPdfError('Este dispositivo no permite compartir el PDF como archivo. Puedes usar «Exportar PDF».')
+    } catch (reason) {
+      setPdfError(reason instanceof Error ? `No se ha podido compartir el PDF: ${reason.message}` : 'No se ha podido compartir el PDF.')
+    } finally {
+      setIsSharingPdf(false)
+    }
+  }
+
   return (
     <section className="operational-history" aria-labelledby="operational-history-title">
       <div className="section-heading">
@@ -115,6 +148,7 @@ export function GroupOperationalHistory({
         {defaultToCurrentMonth && (filters.from !== '' || filters.to !== '') && <button type="button" onClick={() => setFilters((current) => ({ ...current, from: '', to: '' }))}>Ver todo el histórico</button>}
         <button type="button" onClick={() => setFilters(initialFilters())}>Limpiar filtros</button>
         <button type="button" onClick={exportPdf}>📄 Exportar PDF</button>
+        <button type="button" disabled={isSharingPdf} onClick={() => void sharePdf()}>{isSharingPdf ? 'Compartiendo…' : 'Compartir PDF'}</button>
       </div>}
       {filteredEntries.length === 0 ? <p className="history-empty-state">{entries.length === 0 ? emptyMessage : 'No hay movimientos que coincidan con los filtros.'}</p> : <ul className="history-list">
         {filteredEntries.map((entry) => (
