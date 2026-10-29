@@ -7,6 +7,7 @@ import { greetingForHour } from '../identificacion/local-user'
 import { ExpensesBySite } from './ExpensesBySite'
 import { QuickExpenseDisclosure } from './QuickExpenseDisclosure'
 import { InformationStateAtDate } from './InformationStateAtDate'
+import { QuickNoteDisclosure } from '../gastos/QuickNoteDisclosure'
 
 interface InformationPageProps {
   firestore: Firestore
@@ -94,6 +95,7 @@ export function InformationPage({
       <div className="information-sites"><ExpensesBySite groupId={entities.group.id} expenses={entities.expenses} /></div>
 
       <QuickExpenseDisclosure group={entities.group} people={entities.people} />
+      <QuickNoteDisclosure group={entities.group} people={entities.people} />
     </section>
   )
 }

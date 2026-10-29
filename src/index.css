@@ -2455,6 +2455,90 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .quick-expense-disclosure-form .quick-expense-participant-chip { transition: none; }
 }
+
+/* Apunte rápido: libreta local compacta e independiente de la contabilidad. */
+.quick-note-disclosure {
+  overflow: hidden;
+  margin-top: -0.55rem;
+  background: linear-gradient(135deg, #f4f8ff, #fbfcff);
+  border: 1px solid #cad8ef;
+  border-radius: 1.15rem;
+  box-shadow: 0 0.5rem 1.25rem rgb(42 73 128 / 8%);
+}
+
+.quick-note-disclosure-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  color: #263b61;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.quick-note-disclosure-icon {
+  display: grid;
+  width: 2.3rem;
+  height: 2.3rem;
+  place-items: center;
+  background: #dce8fb;
+  border-radius: 0.75rem;
+  font-size: 1.16rem;
+}
+
+.quick-note-disclosure-toggle strong,
+.quick-note-disclosure-toggle small { display: block; }
+.quick-note-disclosure-toggle strong { font-size: 0.98rem; }
+.quick-note-disclosure-toggle small { margin-top: 0.16rem; color: #657595; font-size: 0.76rem; }
+.quick-note-disclosure-action { padding: 0.36rem 0.55rem; color: #3f5d91; background: #e8f0fd; border-radius: 0.48rem; font-size: 0.74rem; font-weight: 800; }
+.quick-note-disclosure-content { padding: 0 1rem 1rem; border-top: 1px solid #dce5f4; }
+
+.quick-note-pad { display: grid; gap: 0.85rem; padding-top: 0.9rem; }
+.quick-note-intro { margin: 0; color: #64728b; font-size: 0.81rem; line-height: 1.45; }
+.quick-note-consumptions { display: flex; gap: 0.42rem; padding: 0.08rem 0 0.2rem; overflow-x: auto; scrollbar-width: thin; }
+.quick-note-consumptions button { flex: 0 0 auto; min-height: 2.45rem; padding: 0.48rem 0.72rem; color: #53647f; background: #fff; border: 1px solid #cfd9e9; border-radius: 999px; cursor: pointer; font: inherit; font-size: 0.78rem; font-weight: 800; }
+.quick-note-consumptions button.is-selected { color: #fff; background: #446ba8; border-color: #446ba8; }
+
+.quick-note-other-form { display: grid; gap: 0.35rem; padding: 0.72rem; background: #eef4fd; border: 1px solid #d3dff1; border-radius: 0.78rem; }
+.quick-note-other-form label { color: #40577d; font-size: 0.76rem; font-weight: 800; }
+.quick-note-other-form > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.45rem; }
+.quick-note-other-form input { min-width: 0; padding: 0.62rem 0.68rem; border: 1px solid #bdcbe1; border-radius: 0.62rem; font: inherit; }
+.quick-note-other-form button { padding: 0.58rem 0.72rem; color: #fff; background: #446ba8; border: 0; border-radius: 0.62rem; cursor: pointer; font-weight: 800; }
+
+.quick-note-counter-section,
+.quick-note-summary { padding: 0.78rem; background: rgb(255 255 255 / 78%); border: 1px solid #d8e1ef; border-radius: 0.85rem; }
+.quick-note-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; margin-bottom: 0.55rem; color: #6c7890; font-size: 0.74rem; }
+.quick-note-section-heading strong { color: #304e7e; font-size: 0.86rem; }
+.quick-note-person-list,
+.quick-note-summary ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.quick-note-person-list > li { display: flex; min-height: 3.15rem; align-items: center; justify-content: space-between; gap: 0.7rem; border-bottom: 1px solid #e2e8f1; }
+.quick-note-person-list > li:last-child { border-bottom: 0; }
+.quick-note-person-list > li > span { overflow: hidden; color: #35445e; font-size: 0.88rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.quick-note-counter { display: grid; grid-template-columns: 2.35rem 2rem 2.35rem; align-items: center; text-align: center; }
+.quick-note-counter button { width: 2.25rem; height: 2.25rem; padding: 0; color: #365d99; background: #edf3fc; border: 1px solid #cbd9ec; border-radius: 0.62rem; cursor: pointer; font-size: 1.2rem; font-weight: 850; }
+.quick-note-counter button:disabled { color: #9da8b9; background: #f5f7fa; cursor: default; opacity: 0.72; }
+.quick-note-counter strong { color: #233b61; font-size: 1.05rem; }
+.quick-note-summary li { display: grid; gap: 0.18rem; padding: 0.52rem 0; border-bottom: 1px solid #e2e8f1; }
+.quick-note-summary li:last-child { border-bottom: 0; }
+.quick-note-summary li > strong { color: #35445e; font-size: 0.85rem; }
+.quick-note-summary li > span { color: #64728b; font-size: 0.78rem; line-height: 1.4; }
+.quick-note-empty { margin: 0; padding: 0.3rem 0; color: #7a869c; font-size: 0.8rem; }
+.quick-note-clear { width: 100%; padding: 0.65rem; color: #a33d47; background: #fff5f5; border: 1px solid #edc8cc; border-radius: 0.68rem; cursor: pointer; font: inherit; font-size: 0.78rem; font-weight: 800; }
+.quick-note-clear:disabled { color: #939ca9; background: #f6f7f9; border-color: #e1e5ea; cursor: default; }
+
+@media (hover: hover) {
+  .quick-note-disclosure-toggle:hover .quick-note-disclosure-icon { transform: translateY(-1px); }
+  .quick-note-consumptions button:hover:not(.is-selected),
+  .quick-note-counter button:hover:not(:disabled) { border-color: #8eacd5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-note-disclosure-icon { transition: none; }
+}
 /* Administración > Gastos: lista compacta y detalle de solo lectura. */
 .admin-expense-period {
   display: flex;

@@ -7,6 +7,7 @@ import { QuickExpenseDisclosure } from '../informacion/QuickExpenseDisclosure'
 import { ActiveGroupSelector } from '../grupos/ActiveGroupSelector'
 import { ExpensesBySite } from '../informacion/ExpensesBySite'
 import { AccountStatusList } from '../informacion/AccountStatusList'
+import { QuickNoteDisclosure } from '../gastos/QuickNoteDisclosure'
 
 interface OperationalPageProps {
   firestore: Firestore
@@ -35,5 +36,6 @@ export function OperationalPage({ firestore, availableGroups, entities, financia
     <AddExpenseForm group={entities.group} people={entities.people} expenses={entities.expenses} operationalPin={operationalPin} onGroupChanged={onGroupChanged} />
     <ExpensesBySite groupId={entities.group.id} expenses={entities.expenses} />
     <QuickExpenseDisclosure group={entities.group} people={entities.people} />
+    <QuickNoteDisclosure group={entities.group} people={entities.people} />
   </section>
 }
