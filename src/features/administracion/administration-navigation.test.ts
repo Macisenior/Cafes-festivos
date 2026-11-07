@@ -17,6 +17,7 @@ describe('navegación de Administración', () => {
 
   it('abre Históricos como área administrativa separada', () => {
     expect(openAdministrationArea('history')).toBe('history')
+    expect(openAdministrationArea('monthly-statements')).toBe('monthly-statements')
   })
 
   it('abre Informes y Gastos por persona como áreas administrativas', () => {

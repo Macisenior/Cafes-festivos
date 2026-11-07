@@ -2907,3 +2907,14 @@ select {
     gap: 0.42rem;
   }
 }
+
+.monthly-statement-preview {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.monthly-statement-preview > p {
+  margin: 0;
+  color: var(--muted);
+}

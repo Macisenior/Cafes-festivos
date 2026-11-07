@@ -16,6 +16,7 @@ import { GlobalWalletSummary } from './GlobalWalletSummary'
 import { AccountStateAtDateReport } from './AccountStateAtDateReport'
 import { StateBetweenDatesReport } from './StateBetweenDatesReport'
 import { ProSummaryReport } from './ProSummaryReport'
+import { MonthlyIndividualStatementReport } from './MonthlyIndividualStatementReport'
 import { SystemBackup } from './SystemBackup'
 import {
   openAdministrationArea,
@@ -138,6 +139,12 @@ export function AdministrationPage({
             enableFilters
             defaultToCurrentMonth
           />
+        </section>
+      )}
+
+      {area === 'monthly-statements' && (
+        <section className="administration-area" aria-label="Extractos mensuales">
+          <MonthlyIndividualStatementReport group={entities.group} people={entities.people} contributions={entities.contributions} expenses={entities.expenses} />
         </section>
       )}
 

@@ -19,6 +19,7 @@ export function AdministrationMenu({ onOpen }: AdministrationMenuProps) {
         <li><button type="button" onClick={() => onOpen('groups')}><strong>📁 Grupos</strong><span>Listado y alta de grupos V4.</span></button></li>
         <li><button type="button" onClick={() => onOpen('expenses')}><strong>🧾 Gastos</strong><span>Gestión administrativa de gastos.</span></button></li>
         <li><button type="button" onClick={() => onOpen('history')}><strong>📋 Históricos</strong><span>Consulta de movimientos del grupo activo.</span></button></li>
+        <li><button type="button" onClick={() => onOpen('monthly-statements')}><strong>📄 Extractos mensuales</strong><span>Extracto individual por persona y mes.</span></button></li>
         <li><button type="button" onClick={() => onOpen('reports')}><strong>📊 Informes</strong><span>Informes administrativos del grupo activo.</span></button></li>
         <li><button type="button" onClick={() => onOpen('system')}><strong>⚙️ Sistema</strong><span>Copias, Restaurar y futuro mantenimiento.</span></button></li>
       </ul>
