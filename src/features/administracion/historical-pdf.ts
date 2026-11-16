@@ -227,6 +227,8 @@ export interface StyledPdfRow {
   detail?: string
   amountInCents: AmountInCents
   tone?: 'positive' | 'negative' | 'neutral'
+  /** Mantiene esta fila unida a la siguiente cuando actúa como cabecera de bloque. */
+  keepWithNext?: boolean
 }
 
 export interface StyledPdfSummaryLine {
@@ -273,10 +275,12 @@ export function createStyledPdfPages(report: StyledPdfReport): readonly string[]
     return page
   }
   let page = startPage()
-  report.rows.forEach((row) => {
+  report.rows.forEach((row, rowIndex) => {
     const detailLines = row.detail === undefined ? [] : wrapPdfLine(row.detail, 66)
     const height = 25 + detailLines.length * 11
-    if (page.y - height < 92) page = startPage()
+    const nextRow = report.rows[rowIndex + 1]
+    const nextHeight = nextRow === undefined ? 0 : 25 + (nextRow.detail === undefined ? 0 : wrapPdfLine(nextRow.detail, 66).length * 11)
+    if (page.y - height - (row.keepWithNext ? nextHeight : 0) < 92) page = startPage()
     page.commands.push(`0.88 0.91 0.89 RG\n0.5 w\n40 ${page.y - height + 5} m\n555 ${page.y - height + 5} l\nS`)
     page.commands.push(visualText('F2', 10.5, 40, page.y, row.title))
     page.commands.push(visualRightText('F2', 10.5, 555, page.y, formatPdfMoney(row.amountInCents), toneColor(row.tone)))

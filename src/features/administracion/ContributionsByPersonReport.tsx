@@ -3,6 +3,7 @@ import type { Contribution, Group, Person } from '../../domain/entities'
 import { createContributionsByPersonReport, EMPTY_CONTRIBUTIONS_BY_PERSON_RANGE, type ContributionByPersonDateRange } from './contributions-by-person'
 import { createStyledPdfDocument, formatPdfMoney, historicalPdfFilename } from './historical-pdf'
 import { prepareContributionsByPersonPdf } from './contributions-by-person-pdf'
+import { MonthlyContributionsView } from './MonthlyContributionsView'
 
 interface ContributionsByPersonReportProps {
   group: Group
@@ -11,6 +12,7 @@ interface ContributionsByPersonReportProps {
 }
 
 export function ContributionsByPersonReport({ group, people, contributions }: ContributionsByPersonReportProps) {
+  const [view, setView] = useState<'historical' | 'monthly'>('historical')
   const [range, setRange] = useState<ContributionByPersonDateRange>(EMPTY_CONTRIBUTIONS_BY_PERSON_RANGE)
   const [pdfError, setPdfError] = useState<string | null>(null)
   const report = createContributionsByPersonReport(group.id, people, contributions, range)
@@ -41,6 +43,11 @@ export function ContributionsByPersonReport({ group, people, contributions }: Co
   return (
     <section className="operational-history" aria-labelledby="contributions-by-person-title">
       <div className="section-heading"><div><p className="eyebrow">Informes</p><h2 id="contributions-by-person-title">Aportaciones por persona</h2><p className="history-group-name">Grupo: {group.name}</p></div></div>
+      <div className="report-tabs" role="tablist" aria-label="Vista del informe de aportaciones">
+        <button type="button" role="tab" aria-selected={view === 'historical'} onClick={() => setView('historical')}>Histórico acumulado</button>
+        <button type="button" role="tab" aria-selected={view === 'monthly'} onClick={() => setView('monthly')}>Resumen mensual</button>
+      </div>
+      {view === 'historical' ? <>
       <div className="history-filters" aria-label="Rango de aportaciones por persona">
         <label>Desde<input type="date" value={range.from} onChange={(event) => setRange((current) => ({ ...current, from: event.target.value }))} /></label>
         <label>Hasta<input type="date" value={range.to} onChange={(event) => setRange((current) => ({ ...current, to: event.target.value }))} /></label>
@@ -52,6 +59,7 @@ export function ContributionsByPersonReport({ group, people, contributions }: Co
       </ul>}
       {hasIncludedContributions && <div className="expense-report-total"><strong>TOTAL APORTACIONES</strong><strong>{formatPdfMoney(report.totalContributionsInCents)}</strong></div>}
       {pdfError && <p className="form-error" role="alert">{pdfError}</p>}
+      </> : <MonthlyContributionsView group={group} people={people} contributions={contributions} />}
     </section>
   )
 }
