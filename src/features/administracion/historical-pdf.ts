@@ -305,7 +305,7 @@ function encodeWinAnsi(value: string): Uint8Array {
 }
 
 /** Genera bytes PDF locales usando WinAnsi para conservar tildes, ñ y €. */
-function createPdfDocumentFromPages(pages: readonly string[]): Blob {
+export function createPdfDocumentFromPages(pages: readonly string[], width = 595, height = 842): Blob {
   const pageIds = pages.map((_, index) => 5 + index)
   const contentIds = pages.map((_, index) => 5 + pages.length + index)
   const objects: string[] = []
@@ -314,7 +314,7 @@ function createPdfDocumentFromPages(pages: readonly string[]): Blob {
   objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'
   objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'
   pages.forEach((content, index) => {
-    objects[pageIds[index]] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentIds[index]} 0 R >>`
+    objects[pageIds[index]] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentIds[index]} 0 R >>`
     objects[contentIds[index]] = `<< /Length ${encodeWinAnsi(content).length} >>\nstream\n${content}\nendstream`
   })
   let pdf = '%PDF-1.4\n'

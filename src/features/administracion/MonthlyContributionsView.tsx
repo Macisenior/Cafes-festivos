@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { Contribution, Group, Person } from '../../domain/entities'
-import { createStyledPdfDocument, formatPdfMoney } from './historical-pdf'
+import { formatPdfMoney } from './historical-pdf'
 import { createMonthlyContributionsReport, earliestDatedContributionMonth, type MonthlyContributionRange, type MonthlyContributionsReport } from './monthly-contributions'
-import { prepareMonthlyContributionsPdf, type MonthlyContributionsPdfMode } from './monthly-contributions-pdf'
+import { createMonthlyContributionsPdfDocument, prepareMonthlyContributionsPdf, type MonthlyContributionsPdfMode } from './monthly-contributions-pdf'
 import { shareMonthlyContributionsPdf } from './monthly-contributions-share'
 
 interface Props { group: Group; people: readonly Person[]; contributions: readonly Contribution[] }
@@ -45,7 +45,7 @@ export function MonthlyContributionsView({ group, people, contributions }: Props
     if (report === null) return
     const generatedOn = new Intl.DateTimeFormat('es-ES', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Europe/Madrid' }).format(new Date())
     const pdf = prepareMonthlyContributionsPdf(group.name, report, generatedOn, mode)
-    const url = URL.createObjectURL(createStyledPdfDocument(pdf))
+    const url = URL.createObjectURL(createMonthlyContributionsPdfDocument(pdf))
     const link = document.createElement('a')
     link.href = url
     link.download = pdfFilename(mode)

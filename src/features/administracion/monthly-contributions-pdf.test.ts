@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createStyledPdfDocument, createStyledPdfPages } from './historical-pdf'
 import type { MonthlyContributionsReport } from './monthly-contributions'
-import { prepareMonthlyContributionsPdf } from './monthly-contributions-pdf'
+import { createMonthlyContributionsPdfDocument, createMonthlyContributionsPdfPages, prepareMonthlyContributionsPdf } from './monthly-contributions-pdf'
 
 const report: MonthlyContributionsReport = {
   groupId: 'general', range: { fromMonth: '2025-01', toMonth: '2025-02' }, totalInRangeInCents: 4000,
@@ -17,30 +16,41 @@ const report: MonthlyContributionsReport = {
 }
 
 describe('PDF de aportaciones mensuales', () => {
-  it('prepara el resumen con una fila por mes y aperturas fuera del período', () => {
+  it('muestra los meses, incluidos los vacíos, y una sola vez las aperturas fuera del período', async () => {
     const pdf = prepareMonthlyContributionsPdf('Cafés', report, '16/11/2026', 'summary')
-    expect(pdf.rows.map((row) => [row.title, row.amountInCents])).toEqual([['Enero de 2025', 4000], ['Febrero de 2025', 0]])
-    expect(pdf.filters.join(' ')).toContain('no incluidas en los meses')
-    expect(pdf.summary.at(-1)?.amountInCents).toBe(4000)
+    const rendered = createMonthlyContributionsPdfPages(pdf).join('\n')
+    expect(rendered).toContain('(Enero de 2025)')
+    expect(rendered).toContain('(Febrero de 2025)')
+    expect(rendered).toContain('(0,00 €)')
+    expect(rendered).toContain('(Fuera del período)')
+    expect(rendered.match(/\(Aperturas sin fecha\)/g)).toHaveLength(1)
+    expect(rendered).not.toContain('(Pepe)')
+    expect(rendered).toContain('(Total del período)')
+    const document = createMonthlyContributionsPdfDocument(pdf)
+    expect(document.type).toBe('application/pdf')
+    expect(await document.text()).toContain('/MediaBox [0 0 306 544]')
   })
 
-  it('prepara detalle por persona, inactivas y aperturas separadas', () => {
-    const pdf = prepareMonthlyContributionsPdf('Cafés', report, '16/11/2026', 'detailed')
-    const rendered = createStyledPdfPages(pdf).join('\n')
-    expect(rendered).toContain('Aportaciones mensuales - detalle')
-    expect(rendered).toContain('- Pepe')
-    expect(rendered).toContain('Persona inactiva - historial conservado')
-    expect(rendered).toContain('APERTURAS HEREDADAS SIN FECHA')
-    expect(rendered).toContain('TOTAL MESES SELECCIONADOS')
-    expect(createStyledPdfDocument(pdf).type).toBe('application/pdf')
-  })
-
-  it('pagina muchos meses manteniendo una cabecera mensual con su primera persona', () => {
-    const manyMonths = Array.from({ length: 40 }, (_, index) => ({ ...report.months[0], month: `${2023 + Math.floor(index / 12)}-${String(index % 12 + 1).padStart(2, '0')}` }))
-    const pdf = prepareMonthlyContributionsPdf('Cafés', { ...report, months: manyMonths }, '16/11/2026', 'detailed')
-    const pages = createStyledPdfPages(pdf)
-    expect(pages.length).toBeGreaterThan(1)
-    expect(pages.every((page) => !page.trimStart().startsWith('- Ana'))).toBe(true)
-    expect(pages.at(-1)).toContain('RESUMEN FINAL')
+  it('pagina el detalle con contexto y conserva nombres largos e importes negativos', () => {
+    const people = [
+      { personId: 'long', personName: 'María Fernanda de los Ángeles Rodríguez de la Fuente', isActive: false, contributedInCents: -123456789 },
+      ...Array.from({ length: 36 }, (_, index) => ({
+        personId: String(index), personName: `Persona número ${index + 1}`, isActive: true, contributedInCents: 500,
+      })),
+    ]
+    const pdf = prepareMonthlyContributionsPdf('Cafés', {
+      ...report,
+      months: [{ ...report.months[0], people }],
+    }, '16/11/2026', 'detailed')
+    const pages = createMonthlyContributionsPdfPages(pdf)
+    expect(pages.length).toBeGreaterThan(2)
+    expect(pages[0]).toContain('(-1234567,89 €)')
+    expect(pages[0]).toContain('María Fernanda')
+    expect(pages[0]).toContain('Rodríguez de la Fuente')
+    expect(pages[0]).toContain('(Persona inactiva)')
+    expect(pages[1]).toContain('Enero de 2025 \\(continúa\\)')
+    expect(pages.join('\n').match(/\(40,00 €/g)).toHaveLength(2)
+    expect(pages.at(-1)).toContain('(Aperturas sin fecha)')
+    expect(pages.at(-1)).toContain('(Total del período)')
   })
 })
